@@ -1,0 +1,60 @@
+local Rules = require("../src/ReplicatedStorage/Shared/PrisonRules")
+local checks = 0
+local function check(name, result)
+	checks += 1
+	assert(result, name)
+end
+
+-- Reject impossible client physics samples before using distances or timestamps.
+check("finite zero", Rules.isFinite(0))
+check("finite negative scalar", Rules.isFinite(-1))
+check("reject NaN", not Rules.isFinite(0 / 0))
+check("reject positive infinity", not Rules.isFinite(math.huge))
+check("reject negative infinity", not Rules.isFinite(-math.huge))
+check("reject string number", not Rules.isFinite("16"))
+check("reject nil", not Rules.isFinite(nil))
+check("valid point", Rules.isFinitePoint({ X = 1, Y = 2, Z = 3 }))
+check("reject invalid point coordinate", not Rules.isFinitePoint({ X = 0 / 0, Y = 0, Z = 0 }))
+check("reject incomplete point", not Rules.isFinitePoint({ X = 1, Y = 2 }))
+check("reject scalar point without throwing", not Rules.isFinitePoint(42))
+check("reject absent point", not Rules.isFinitePoint(nil))
+
+local endsAt = Rules.deadline(1000, 60)
+check("sentence lasts 60 seconds", endsAt == 1060)
+check("deadline rejects invalid start", Rules.deadline(0 / 0, 60) == nil)
+check("deadline rejects negative sentence", Rules.deadline(1000, -60) == nil)
+check("deadline rejects overflowing addition", Rules.deadline(1e308, 1e308) == nil)
+check("remaining at start", Rules.remaining(endsAt, 1000) == 60)
+check("remaining before expiry", Rules.remaining(endsAt, 1059) == 1)
+check("expires exactly at deadline", Rules.remaining(endsAt, 1060) == 0)
+check("does not return negative countdown", Rules.remaining(endsAt, 2000) == 0)
+check("invalid deadline ends safe", Rules.remaining(0 / 0, 1000) == 0)
+
+local function advance(expected, index, distance, elapsed, path, speed, alive)
+	local accepted = Rules.canAdvance(expected, index, distance, elapsed, path, speed, alive)
+	return accepted
+end
+check("living inmate at first checkpoint", advance(1, 1, 2, 10, 30, 16, true))
+check("reject skipping checkpoint", not advance(1, 2, 2, 10, 30, 16, true))
+check("reject replay checkpoint", not advance(2, 1, 2, 10, 30, 16, true))
+check("reject zero index", not advance(0, 0, 2, 10, 30, 16, true))
+check("checkpoint proximity includes boundary", advance(1, 1, 10, 10, 30, 16, true))
+check("reject outside prompt reach", not advance(1, 1, 10.01, 10, 30, 16, true))
+check("reject dead inmate", not advance(1, 1, 2, 10, 30, 16, false))
+check("reject remote jump across route", not advance(1, 1, 0, 0.1, 120, 16, true))
+check("accept traversed route with latency tolerance", advance(1, 1, 3, 8, 120, 16, true))
+check("reject negative elapsed time", not advance(1, 1, 0, -1, 0, 16, true))
+check("reject negative distance", not advance(1, 1, -1, 10, 30, 16, true))
+check("reject invalid physics coordinate distance", not advance(1, 1, 0 / 0, 10, 30, 16, true))
+check("reject infinite elapsed", not advance(1, 1, 0, math.huge, 30, 16, true))
+check("reject zero walking speed", not advance(1, 1, 0, 10, 30, 0, true))
+
+check("allow ordinary walking sample", Rules.movementAllowed(4, 0.2, 16))
+check("allow small replication correction", Rules.movementAllowed(5, 0, 16))
+check("reject large instant teleport", not Rules.movementAllowed(80, 0.2, 16))
+check("reject invalid movement sample", not Rules.movementAllowed(0 / 0, 0.2, 16))
+check("reject negative sample interval", not Rules.movementAllowed(4, -0.2, 16))
+check("reject negative movement distance", not Rules.movementAllowed(-4, 0.2, 16))
+check("reject infinite walking speed", not Rules.movementAllowed(4, 0.2, math.huge))
+
+print(("PASS PrisonRules: %d checks"):format(checks))
