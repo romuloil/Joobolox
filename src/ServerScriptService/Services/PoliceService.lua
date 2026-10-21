@@ -12,6 +12,7 @@ local Config = require(Shared:WaitForChild("PoliceConfig"))
 local Rules = require(Shared:WaitForChild("PoliceRules"))
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
 local Security = require(script.Parent:WaitForChild("SecurityService"))
+local WorkRoleService = require(script.Parent:WaitForChild("WorkRoleService"))
 
 local PoliceService = {}
 local initialized = false
@@ -42,7 +43,8 @@ local function nearAny(player, prompts)
 	return false
 end
 local function onDuty(player)
-	return duty[player] ~= nil and not player:GetAttribute("Detained") and rootOf(player) ~= nil
+	return duty[player] ~= nil and WorkRoleService.hasRole(player, "Policial")
+		and not player:GetAttribute("Detained") and rootOf(player) ~= nil
 end
 local function equipped(player, id)
 	local character = player.Character
@@ -134,23 +136,14 @@ function PoliceService.join(player)
 		end
 	end
 	if not duty[player] or player.Parent ~= Players then return false end
-	-- Colete e distintivo originais, sem substituir roupas/acessórios do jogador.
-	local character = player.Character
-	local torso = character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
-	if torso then
-		local vest = Instance.new("Part")
-		vest.Name = "ColetePolicial"
-		vest.Size = Vector3.new(torso.Size.X + 0.12, torso.Size.Y * 0.85, torso.Size.Z + 0.16)
-		vest.Color, vest.Material = Color3.fromRGB(26, 63, 106), Enum.Material.SmoothPlastic
-		vest.CanCollide, vest.CanTouch, vest.Massless = false, false, true
-		vest.CFrame, vest.Parent = torso.CFrame, character
-		local weld = Instance.new("WeldConstraint"); weld.Part0, weld.Part1, weld.Parent = torso, vest, vest
-		local badge = Instance.new("Part")
-		badge.Name,badge.Size,badge.Color = "DistintivoKinder",Vector3.new(0.36,0.5,0.1),Color3.fromRGB(240,194,69)
-		badge.CanCollide,badge.CanTouch,badge.Massless = false,false,true
-		badge.CFrame,badge.Parent = torso.CFrame*CFrame.new(-torso.Size.X*0.2,torso.Size.Y*0.14,-torso.Size.Z/2-0.15),vest
-		local badgeWeld=Instance.new("WeldConstraint");badgeWeld.Part0,badgeWeld.Part1,badgeWeld.Parent=torso,badge,badge
+	local assigned = WorkRoleService.assign(player, "Policial")
+	if not assigned then
+		PoliceService.leave(player)
+		notice(player, "Encerre seu outro emprego antes de iniciar o plantão.")
+		return false
 	end
+	-- O uniforme é retirado no vestiário e devolvido pelo WorkRoleService.
+
 	broadcastState()
 	notice(player, "Em serviço. Retire os equipamentos no arsenal e consulte os terminais.")
 	return true
@@ -160,6 +153,7 @@ function PoliceService.leave(player, silent)
 	local record = duty[player]
 	if not record then return false end
 	duty[player] = nil
+	WorkRoleService.clear(player, "Policial")
 	count = math.max(0, count - 1)
 	player:SetAttribute("PoliceDuty", false)
 	stripGear(player)

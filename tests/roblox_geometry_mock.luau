@@ -25,6 +25,7 @@ local F={}; local Fmt={}
 local function cf(p,r,u,b) return setmetatable({_kind="CFrame",p=p,r=r or vec(1,0,0),u=u or vec(0,1,0),b=b or vec(0,0,1)},Fmt) end
 function Fmt.__index(a,k)
  if k=="Position" or k=="p" then return rawget(a,"p") end
+ if k=="Rotation" then return cf(vec(),a.r,a.u,a.b) end
  if k=="X" or k=="Y" or k=="Z" then return a.p[k] end
  if k=="RightVector" or k=="XVector" then return a.r end
  if k=="UpVector" or k=="YVector" then return a.u end
@@ -99,7 +100,7 @@ local function inst(class)
  return setmetatable({_props={ClassName=class,Name=class,CanCollide=true,CanTouch=true,CanQuery=true,Transparency=0,CFrame=CFrame.new(),Size=vec(4,1,2)},_children={},_attributes={}},Imt)
 end
 function I:IsA(class)
- return self.ClassName==class or (class=="BasePart" and (self.ClassName=="Part" or self.ClassName=="Seat" or self.ClassName=="WedgePart" or self.ClassName=="SpawnLocation"))
+ return self.ClassName==class or (class=="BasePart" and (self.ClassName=="Part" or self.ClassName=="Seat" or self.ClassName=="VehicleSeat" or self.ClassName=="WedgePart" or self.ClassName=="SpawnLocation"))
 end
 function I:FindFirstChild(name,recursive)
  for _,c in ipairs(self._children) do if c.Name==name then return c end end

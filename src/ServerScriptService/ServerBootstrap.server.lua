@@ -22,6 +22,10 @@ local SeatService = require(Services:WaitForChild("SeatService"))
 local CivicBuilder = require(Services:WaitForChild("CivicBuilder"))
 local PrisonService = require(Services:WaitForChild("PrisonService"))
 local PoliceService = require(Services:WaitForChild("PoliceService"))
+local TaxiService = require(Services:WaitForChild("TaxiService"))
+local WorkRoleService = require(Services:WaitForChild("WorkRoleService"))
+local WorkplaceBuilder = require(Services:WaitForChild("WorkplaceBuilder"))
+local StreetNPCService = require(Services:WaitForChild("StreetNPCService"))
 
 -- Segura o nascimento dos jogadores até o mapa existir
 Players.CharacterAutoLoads = false
@@ -60,10 +64,14 @@ ZoneService.init() -- locais de trabalho protegidos (precisa do mapa pronto)
 VehicleService.init(remotes)
 NPCService.init(remotes)
 JobService.init(remotes)
+local workplaces = WorkplaceBuilder.build(CivicBuilder.sites.workplaces)
+WorkRoleService.init(remotes, workplaces)
+VehicleService.configureWorkplaces(workplaces, CivicBuilder.sites.personalGarage)
 -- Prisão e polícia compartilham apenas APIs internas. O cliente não escolhe
 -- quem fica preso; abordagem e algemamento são conferidos pelo servidor.
 PrisonService.init(remotes, CivicBuilder.sites, {
 	beforeDetain = function(player)
+		TaxiService.leave(player)
 		PoliceService.leave(player)
 		JobService.leave(player)
 		VehicleService.prepareForDetention(player)
@@ -71,12 +79,23 @@ PrisonService.init(remotes, CivicBuilder.sites, {
 })
 PoliceService.init(remotes, CivicBuilder.sites, {
 	beforeDuty = function(player)
+		TaxiService.leave(player)
 		JobService.leave(player)
 		VehicleService.prepareForDetention(player)
 	end,
 	beforeStun = VehicleService.prepareForDetention,
 	prisonService = PrisonService,
 })
+TaxiService.init(remotes, CivicBuilder.sites.taxi, {
+	vehicleService = VehicleService,
+	workRoleService = WorkRoleService,
+	beforeDuty = function(player)
+		PoliceService.leave(player)
+		JobService.leave(player)
+		VehicleService.prepareForDetention(player)
+	end,
+})
+StreetNPCService.init(CivicBuilder.sites)
 SeatService.init(VehicleService.dismount) -- bancos: sentar com E (depois que lojas e praça existem)
 
 -- 4. Libera o nascimento dos jogadores

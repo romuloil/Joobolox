@@ -7,7 +7,7 @@ local GameConfig = {}
 
 GameConfig.GameName = "Little Life: Minha Cidade"
 GameConfig.CityName = "Little Little Kinder"
-GameConfig.Version = "Marco 5.2 — Complexo Prisional e Polícia"
+GameConfig.Version = "Marco 5.3 — LXR Táxis e Profissões"
 
 -- Nomes oficiais (documento mestre, seção 5)
 GameConfig.Places = {
@@ -29,6 +29,7 @@ GameConfig.Remotes = {
 	TutorialRequest = "TutorialRequest", -- cliente avisa que está pronto / terminou o tutorial
 	JobRequest = "JobRequest", -- cliente pede para entrar/sair de um emprego
 	PoliceRequest = "PoliceRequest", -- intenções policiais, sempre validadas no servidor
+	TaxiRequest = "TaxiRequest", -- serviço LXR, validado no servidor
 }
 
 -- Economia (valores PROVISÓRIOS, ajustar depois de testar)
@@ -77,7 +78,7 @@ GameConfig.Bike = {
 	PedalSpeed = 0.45, -- voltas do pedal por volta da roda
 }
 
--- Carros (por enquanto só 1 modelo, para andar rápido pela cidade).
+-- Veículo pessoal do protótipo e sedãs exclusivos dos empregos.
 -- Cada carro é só dados: o CarBuilder monta pelo tamanho e cores daqui. Novos carros = nova entrada.
 -- Esportivo baixo em cunha inspirado no BMW i8 (pedido do Luís), com nome e marca próprios
 -- (o Roblox não deixa usar marcas reais).
@@ -104,6 +105,21 @@ GameConfig.Cars = {
 		Hover = 2.0, -- altura do centro do chassi acima do chão
 	},
 }
+-- Sedãs de serviço: somente as garagens dos respectivos empregos os liberam.
+local function serviceSedan(name, role, bodyColor, maxSpeed)
+	return {
+		Name = name, Role = role, Style = "Sedan", Length = 18.6, Width = 7.6,
+		BodyColor = bodyColor, TrimColor = Color3.fromRGB(25, 29, 34),
+		AccentColor = role == "Taxista" and Color3.fromRGB(27, 79, 150) or Color3.fromRGB(235, 237, 240),
+		GlassColor = Color3.fromRGB(112, 153, 180), RimColor = Color3.fromRGB(193, 200, 207),
+		CaliperColor = Color3.fromRGB(60, 65, 70), SeatColor = Color3.fromRGB(37, 42, 47),
+		Reflectance = 0.04, WheelRadius = 1.35, MaxSpeed = maxSpeed, ReverseSpeed = 19,
+		Acceleration = 28, Brake = 72, Drag = 15, TurnRate = 1.65, Hover = 2.1,
+	}
+end
+GameConfig.Cars.Taxi = serviceSedan("LXR Táxi Cidade", "Taxista", Color3.fromRGB(246, 193, 38), 70)
+GameConfig.Cars.Police = serviceSedan("Kinder Patrulha", "Policial", Color3.fromRGB(24, 66, 115), 80)
+GameConfig.WorkCars = { Taxista = "Taxi", Policial = "Police" }
 GameConfig.CarModel = "Vortex" -- carro que o botão "Carro" chama
 GameConfig.CarCooldown = 2 -- segundos entre pedidos de chamar/sair do carro
 

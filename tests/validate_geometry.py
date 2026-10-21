@@ -25,7 +25,7 @@ def main():
     mock = (root / 'tests/roblox_geometry_mock.luau').read_text()
     spec = (root / 'tests/geometry_spec.luau').read_text()
     code = 'local mock = (function()\n' + mock + '\nend)()\n'
-    for name, category in [('GameConfig', 'Shared'), ('CivicConfig', 'Shared'), ('PrisonBuilder', 'Services'), ('CivicBuilder', 'Services'), ('MapBuilder', 'Services')]:
+    for name, category in [('GameConfig', 'Shared'), ('CivicConfig', 'Shared'), ('PrisonBuilder', 'Services'), ('TaxiSiteBuilder', 'Services'), ('CivicBuilder', 'Services'), ('MapBuilder', 'Services')]:
         branch = 'ReplicatedStorage/Shared' if category == 'Shared' else 'ServerScriptService/Services'
         source = (root / 'src' / branch / (name + '.lua')).read_text()
         code += f'local {name} = mock.load("{name}", {literal(source)}, {str(category == "Services").lower()})\n'

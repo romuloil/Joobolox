@@ -28,6 +28,7 @@ local CarController = require(Controllers:WaitForChild("CarController"))
 local UIScaler = require(Controllers:WaitForChild("UIScaler"))
 local PrisonController = require(Controllers:WaitForChild("PrisonController"))
 local PoliceController = require(Controllers:WaitForChild("PoliceController"))
+local TaxiController = require(Controllers:WaitForChild("TaxiController"))
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -101,13 +102,14 @@ end
 carButton.Parent = gui
 UIScaler.attach(carButton)
 
-local function setCarText(driving)
+local function setCarText(driving, workRole)
 	local suffix = touch and "" or " [V]"
+	local name = workRole == "Taxista" and "Táxi LXR" or workRole == "Policial" and "Viatura" or "Carro"
 	if driving then
-		carButton.Text = "Sair do carro" .. suffix
+		carButton.Text = (workRole == "Taxista" and "Sair do táxi" or workRole == "Policial" and "Sair da viatura" or "Sair do carro") .. suffix
 		carButton.BackgroundColor3 = Color3.fromRGB(200, 90, 60)
 	else
-		carButton.Text = "Carro" .. suffix
+		carButton.Text = name .. suffix
 		carButton.BackgroundColor3 = Color3.fromRGB(40, 90, 170)
 	end
 end
@@ -135,6 +137,7 @@ JobController.init()
 CarController.init()
 PrisonController.init()
 PoliceController.init()
+TaxiController.init()
 
 -- Respostas do servidor
 uiUpdate.OnClientEvent:Connect(function(kind, data)
@@ -144,7 +147,7 @@ uiUpdate.OnClientEvent:Connect(function(kind, data)
 	if kind == "BikeState" then
 		setBikeText(data.mounted == true)
 	elseif kind == "CarState" then
-		setCarText(data.driving == true)
+		setCarText(data.driving == true, data.workRole)
 	elseif kind == "Notice" then
 		HudController.toast(tostring(data.text or ""), Color3.fromRGB(200, 90, 60))
 	elseif kind == "StartTutorial" then
@@ -155,6 +158,8 @@ uiUpdate.OnClientEvent:Connect(function(kind, data)
 		PrisonController.handle(data)
 	elseif kind == "PoliceState" or kind == "PolicePanel" or kind == "PoliceReports" then
 		PoliceController.handle(kind, data)
+	elseif kind == "TaxiState" or kind == "TaxiPanel" then
+		TaxiController.handle(kind, data)
 	elseif kind:sub(1, 3) == "Job" then
 		JobController.handle(kind, data)
 	end

@@ -1167,10 +1167,19 @@ function MapBuilder.build()
 	placeShop(3, -1, GameConfig.Places.PetShop, Color3.fromRGB(240, 230, 245), Color3.fromRGB(130, 80, 200))
 
 	-- Equipamentos públicos têm lote garantido antes das casas e das árvores.
-	-- A delegacia cabe entre a pizzaria e o anel; a prisão fica além do bairro.
+	-- A delegacia e a LXR têm frente para avenidas e lotes livres; a prisão fica além do bairro.
 	local stationArea = rect(CivicConfig.Station.CFrame, CivicConfig.Station.LotSize.X, CivicConfig.Station.LotSize.Z)
 	assert(isFree(stationArea), "Lote da delegacia conflita com o mapa: reveja CivicConfig")
 	occupy(stationArea)
+	for _, site in ipairs({ CivicConfig.Taxi, CivicConfig.Fuel }) do
+		assert(site and site.CFrame and site.LotSize, "Configuração de lote público incompleta")
+		local area = rect(site.CFrame, site.LotSize.X, site.LotSize.Z)
+		assert(isFree(area), "Lote público conflita com o mapa: " .. site.Name)
+		occupy(area)
+	end
+	for _, stop in ipairs(CivicConfig.TaxiStops or {}) do
+		occupy(rect(CFrame.new(stop.position), 8, 8))
+	end
 	occupy(rect(CivicConfig.Prison.CFrame, CivicConfig.Prison.LotSize.X, CivicConfig.Prison.LotSize.Z))
 	for _, road in ipairs(CivicConfig.Roads) do
 		local cf = CFrame.lookAt((road.a + road.b) / 2, road.b)

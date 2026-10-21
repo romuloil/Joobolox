@@ -17,6 +17,7 @@ local MissionService = require(script.Parent:WaitForChild("MissionService"))
 local JobSiteBuilder = require(script.Parent:WaitForChild("JobSiteBuilder"))
 local MarketService = require(script.Parent:WaitForChild("MarketService"))
 local CityNPCService = require(script.Parent:WaitForChild("CityNPCService"))
+local WorkRoleService = require(script.Parent:WaitForChild("WorkRoleService"))
 
 local JobService = {}
 
@@ -49,6 +50,7 @@ function JobService.leave(player, notify)
 		return
 	end
 	jobOf[player] = nil
+	WorkRoleService.clear(player, id)
 	counts[id] = math.max(0, counts[id] - 1)
 	MissionService.stopJob(player)
 	if notify ~= false then
@@ -60,6 +62,10 @@ function JobService.leave(player, notify)
 end
 
 function JobService.join(player, id)
+	if player:GetAttribute("TaxiDuty") then
+		uiUpdate:FireClient(player, "Notice", { text = "Encerre o turno na LXR Táxis antes de escolher outro emprego." })
+		return
+	end
 	if player:GetAttribute("PoliceDuty") then
 		uiUpdate:FireClient(player, "Notice", { text = "Encerre o plantão policial antes de escolher outro emprego." })
 		return
@@ -83,6 +89,11 @@ function JobService.join(player, id)
 	-- Trocar de profissão libera a vaga antiga primeiro
 	if jobOf[player] then
 		JobService.leave(player)
+	end
+	local assigned = WorkRoleService.assign(player, id)
+	if not assigned then
+		uiUpdate:FireClient(player, "Notice", { text = "Encerre seu outro emprego antes de assumir esta vaga." })
+		return
 	end
 	jobOf[player] = id
 	counts[id] += 1

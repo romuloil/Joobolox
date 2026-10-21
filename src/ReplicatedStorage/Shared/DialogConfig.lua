@@ -21,6 +21,8 @@ DialogConfig.GuideTalk = {
 DialogConfig.JobsInfo = {
 	"O quadro de empregos fica aqui na praça, do outro lado do ponto onde você nasce. É só chegar perto e escolher!",
 	"Tem vaga de Pizzaiolo na La Paulistana, Atendente no Minas Market e Entregador na Sherlex.",
+	"Para trabalhar como taxista, vá à sede amarela da LXR Táxis. O plantão policial começa na delegacia ou na prisão.",
+	"Cada profissão tem seu uniforme. Retire o seu no local de trabalho; táxi e viatura também saem da garagem da profissão.",
 	"Cada pedido concluído paga na hora. Para largar o emprego, toque em Sair na faixa laranja.",
 }
 

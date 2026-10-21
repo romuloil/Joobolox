@@ -27,11 +27,15 @@ function SeatService.setup(seat, objectText)
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = seat
 
-	seat:GetPropertyChangedSignal("Occupant"):Connect(function()
-		prompt.Enabled = seat.Occupant == nil
-	end)
+	local function refresh()
+		prompt.Enabled = seat.Occupant == nil and not seat:GetAttribute("TaxiPassengerReserved")
+	end
+	seat:GetPropertyChangedSignal("Occupant"):Connect(refresh)
+	seat:GetAttributeChangedSignal("TaxiPassengerReserved"):Connect(refresh)
+	refresh()
 
 	prompt.Triggered:Connect(function(player)
+		if seat:GetAttribute("TaxiPassengerReserved") then return end
 		local stunnedUntil = player:GetAttribute("StunnedUntil")
 		if type(stunnedUntil) == "number" and stunnedUntil > Workspace:GetServerTimeNow() then
 			return

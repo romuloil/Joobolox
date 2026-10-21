@@ -160,13 +160,27 @@ local function stepWheels(dt)
 			-- portas abrem para cima e um pouco para fora
 			local target = car:GetAttribute("DoorsOpen") and 1 or 0
 			doorOpen[car] = (doorOpen[car] or 0) + (target - (doorOpen[car] or 0)) * math.min(1, dt * 6)
-			for _, doorName in ipairs({ "DoorLeft", "DoorRight" }) do
+			for _, doorName in ipairs({ "DoorLeft", "DoorRight", "RearDoorLeft", "RearDoorRight" }) do
 				local door = car:FindFirstChild(doorName)
 				local motor = door and door:FindFirstChild("DoorMotor")
 				if motor then
 					local side = motor:GetAttribute("Side") or 1
 					local k = doorOpen[car]
-					motor.Transform = CFrame.Angles(-math.rad(70) * k, 0, -side * math.rad(18) * k)
+					if car:GetAttribute("DoorStyle") == "Sedan" then
+						motor.Transform = CFrame.Angles(0, side * math.rad(65) * k, 0)
+					else
+						motor.Transform = CFrame.Angles(-math.rad(70) * k, 0, -side * math.rad(18) * k)
+					end
+				end
+			end
+			-- Giroflex visual original, sem depender de áudio ou assets externos.
+			for _, name in ipairs({ "PoliceRed", "PoliceBlue" }) do
+				local light = car:FindFirstChild(name)
+				if light then
+					local on = math.floor(Workspace:GetServerTimeNow() * 5) % 2 == (name == "PoliceRed" and 0 or 1)
+					light.Material = on and Enum.Material.Neon or Enum.Material.SmoothPlastic
+					local glow = light:FindFirstChild("Flasher")
+					if glow then glow.Enabled = on end
 				end
 			end
 			local mine = drive and drive.car == car

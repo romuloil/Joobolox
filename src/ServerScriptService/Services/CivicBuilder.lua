@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CivicConfig"))
 
 local PrisonBuilder = require(script.Parent:WaitForChild("PrisonBuilder"))
+local TaxiSiteBuilder = require(script.Parent:WaitForChild("TaxiSiteBuilder"))
 
 local CivicBuilder = { sites = nil }
 local WHITE = Color3.fromRGB(235, 235, 224)
@@ -137,61 +138,74 @@ local function street(parent, road)
 end
 
 local function station(parent)
-	local base = Config.Station.CFrame
-	local m = newSite(parent, Config.Station.Name, "Delegacia", "Police", base)
-	local function p(name, size, pos, color, material, collide)
-		return localPart(m, base, name, size, pos, color, material, collide)
-	end
-	p("Pátio", Vector3.new(52, 0.8, 72), Vector3.new(0, 0.4, 0), STONE, Enum.Material.Concrete)
-	p("Piso", Vector3.new(44, 0.3, 54), Vector3.new(0, 0.95, 0), WHITE, Enum.Material.Marble)
-	p("ParedeFundos", Vector3.new(44, 16, 1), Vector3.new(0, 8.8, 26.5))
-	for _, x in ipairs({ -21.5, 21.5 }) do
-		p("ParedeLateral", Vector3.new(1, 16, 54), Vector3.new(x, 8.8, 0))
-		p("FaixaAzul", Vector3.new(1.05, 2.3, 53), Vector3.new(x, 12, 0), BLUE)
-	end
-	for _, side in ipairs({ -1, 1 }) do
-		p("Fachada", Vector3.new(18, 16, 1), Vector3.new(side * 13, 8.8, -26.5))
-		local glass = p("Janela", Vector3.new(9, 5, 0.2), Vector3.new(side * 13, 6, -27.1), Color3.fromRGB(142, 185, 202), Enum.Material.Glass)
-		glass.Transparency = 0.15
-		p("Pórtico", Vector3.new(1, 10, 1), Vector3.new(side * 4.5, 5.8, -27.5), BLUE)
-	end
-	p("VigaPorta", Vector3.new(8, 6, 1), Vector3.new(0, 13.8, -26.5), BLUE)
-	p("Cobertura", Vector3.new(46, 0.8, 56), Vector3.new(0, 17.2, 0), BLUE)
-	p("Marquise", Vector3.new(14, 0.5, 6), Vector3.new(0, 10.6, -29), BLUE, nil, false)
-	sign(m, base, "CENTRO POLICIAL\nLITTLE LITTLE KINDER", Vector3.new(0, 14, -27.1), Vector3.new(35, 4, 0.35))
-	p("BalcãoRecepção", Vector3.new(18, 3.5, 3), Vector3.new(-5, 2.7, -5), WOOD)
-	p("Tampo", Vector3.new(19, 0.3, 3.6), Vector3.new(-5, 4.6, -5), BLUE)
-	sign(m, base, "RECEPÇÃO", Vector3.new(-5, 3.1, -6.8), Vector3.new(9, 1.5, 0.2))
-	p("Monitor", Vector3.new(3, 2, 0.3), Vector3.new(-4, 5.75, -4.8), STEEL)
-	bench(m, base, Vector3.new(12, 2.4, -15), BLUE)
-	plant(m, base, Vector3.new(-18, 1.1, -20))
-	-- Sala de apoio à esquerda; passagem de 8 studs na divisória.
-	p("DivisóriaApoio", Vector3.new(1, 10, 19), Vector3.new(-1, 5.8, 16))
-	sign(m, base, "APOIO À PATRULHA", Vector3.new(-11, 9, 25.8), Vector3.new(17, 2, 0.2))
-	p("MesaApoio", Vector3.new(12, 2.8, 6), Vector3.new(-11, 2.5, 15), WOOD)
-	p("MapaDePatrulha", Vector3.new(12, 7, 0.3), Vector3.new(-11, 8.6, 25.8), Color3.fromRGB(94, 129, 109), nil, false)
-	for i = 1, 4 do
-		p("Armário", Vector3.new(2.7, 7, 2.5), Vector3.new(-18 + i * 3, 4.5, 22.5), BLUE)
-	end
-	-- Cela decorativa: não participa da pena, que acontece na prisão afastada.
-	for x = 3, 20, 2 do
-		p("GradeDecorativa", Vector3.new(0.3, 9, 0.3), Vector3.new(x, 5.4, 9), STEEL, Enum.Material.Metal)
-	end
-	p("TravessaGrade", Vector3.new(18, 0.4, 0.4), Vector3.new(12, 9.8, 9), STEEL)
-	bench(m, base, Vector3.new(12, 2.4, 21), STONE)
-	sign(m, base, "CELA DE APOIO\nÁrea cenográfica", Vector3.new(12, 11.5, 8.9), Vector3.new(17, 2.5, 0.2))
-	for _, x in ipairs({ -11, 11 }) do
-		for _, z in ipairs({ -15, 14 }) do lamp(m, base, Vector3.new(x, 16.5, z)) end
-	end
-	-- Duas vagas pintadas no recuo, sem veículos autônomos ou bloqueio da entrada.
-	for _, x in ipairs({ -17, 17 }) do
-		for _, side in ipairs({ -1, 1 }) do p("Vaga", Vector3.new(0.15, 0.05, 7), Vector3.new(x + side * 3.7, 0.84, -31), WHITE, nil, false) end
-	end
-	local intake = point(m, base, "SimulaçãoStudio", Vector3.new(-10, 5.2, -8), "Simular prisão (Studio)", "Teste de 60 segundos", 1)
-	local duty = point(m, base, "PlantaoDelegacia", Vector3.new(10, 4.5, -9), "Plantão policial", "Entrar / sair do serviço", 0.5)
-	local armory = point(m, base, "ArmariaDelegacia", Vector3.new(-9, 5, 21), "Retirar equipamento", "Armário policial", 0.5)
-	local report = point(m, base, "OcorrenciasDelegacia", Vector3.new(-3, 5, -6), "Registrar informe", "Terminal de ocorrências", 0.5)
-	return intake, { dutyPrompts = { duty }, armoryPrompts = { armory }, reportPrompts = { report } }
+ local base = Config.Station.CFrame
+ local m = newSite(parent, Config.Station.Name, "Delegacia", "Police", base)
+ m:SetAttribute("Role", "Policial")
+ m:SetAttribute("Architecture", "BlueGlassCivic")
+ local p=function(name,size,pos,color,material,collide)return localPart(m,base,name,size,pos,color,material,collide)end
+ p("Esplanada",Vector3.new(124,0.8,148),Vector3.new(0,0.4,0),STONE,Enum.Material.Concrete)
+ p("Piso",Vector3.new(84,0.3,58),Vector3.new(0,0.95,22),WHITE,Enum.Material.Marble)
+ p("Fundos",Vector3.new(84,15,1),Vector3.new(0,8.3,51),WHITE)
+ for _,x in ipairs({-42,42})do
+  p("ParedeLateral",Vector3.new(1,15,58),Vector3.new(x,8.3,22),WHITE)
+  for _,z in ipairs({3,22,41})do
+   local glass=p("JanelaLateral",Vector3.new(0.25,8,15),Vector3.new(x*1.015,7,z),Color3.fromRGB(84,179,224),Enum.Material.Glass)
+   glass.Transparency=0.25
+  end
+ end
+ for _,side in ipairs({-1,1})do
+  p("MuretaAzul",Vector3.new(36,2,1),Vector3.new(side*24,1.8,-7),BLUE)
+  local glass=p("VidraçaRecepção",Vector3.new(34,8,0.3),Vector3.new(side*24,6.8,-7.1),Color3.fromRGB(88,186,230),Enum.Material.Glass)
+  glass.Transparency=0.25
+  p("VigaFachada",Vector3.new(36,4,1),Vector3.new(side*24,12.8,-7),WHITE)
+  p("ColunaPorta",Vector3.new(0.8,11,1.2),Vector3.new(side*6.4,6.3,-7.1),WHITE)
+ end
+ p("VergaPorta",Vector3.new(12,4,1),Vector3.new(0,13.8,-7),BLUE)
+ p("Laje",Vector3.new(87,0.6,61),Vector3.new(0,15.7,22),WHITE)
+ -- Pavimento superior de fachada: grandes painéis azuis e molduras brancas.
+ p("VolumeSuperior",Vector3.new(84,13,58),Vector3.new(0,22.5,22),Color3.fromRGB(92,181,222))
+ for _,z in ipairs({-7.6,51.6})do
+  for x=-35,35,14 do
+   p("MolduraSuperior",Vector3.new(1.1,12.5,0.5),Vector3.new(x,22.4,z),WHITE,nil,false)
+  end
+  p("FaixaSuperior",Vector3.new(86,0.8,0.7),Vector3.new(0,22.3,z),WHITE,nil,false)
+ end
+ p("Cobertura",Vector3.new(88,0.9,62),Vector3.new(0,29.5,22),Color3.fromRGB(227,222,216))
+ p("Platibanda",Vector3.new(88,1.4,1),Vector3.new(0,30.5,-8),WHITE)
+ p("Marquise",Vector3.new(20,0.5,8),Vector3.new(0,11.4,-10),BLUE,nil,false)
+ sign(m,base,"CENTRO POLICIAL",Vector3.new(0,13.4,-7.7),Vector3.new(60,2.8,0.4),BLUE)
+ local crest=p("EscudoKinder",Vector3.new(12,14,0.7),Vector3.new(0,27,-8.5),Color3.fromRGB(227,174,60),Enum.Material.Metal,false)
+ label(crest,"★\nKINDER",BLUE)
+ p("BalcãoRecepção",Vector3.new(21,3.3,4),Vector3.new(0,2.7,17),WOOD)
+ p("Tampo",Vector3.new(22,0.35,4.6),Vector3.new(0,4.5,17),BLUE)
+ p("Monitor",Vector3.new(4,2.6,0.4),Vector3.new(0,5.95,17.7),STEEL,nil,false)
+ sign(m,base,"RECEPÇÃO",Vector3.new(0,3,14.6),Vector3.new(14,1.7,0.2),BLUE)
+ for _,x in ipairs({-24,24})do bench(m,base,Vector3.new(x,2.4,4),BLUE)end
+ p("DivisóriaArmaria",Vector3.new(1,12,29),Vector3.new(-12,6.8,36.5),WHITE)
+ p("MesaApoio",Vector3.new(21,3,5),Vector3.new(-26,2.7,36),WOOD)
+ for _,x in ipairs({-34,-26,-18})do p("ArmárioAzul",Vector3.new(7,9,3),Vector3.new(x,5.3,47),BLUE,Enum.Material.Metal)end
+ sign(m,base,"ARMARIA / UNIFORMES",Vector3.new(-26,12,49.8),Vector3.new(28,2.5,0.25),BLUE)
+ p("MesaInformes",Vector3.new(20,3,5),Vector3.new(24,2.7,29),WOOD)
+ p("TelaInformes",Vector3.new(5,3,0.3),Vector3.new(24,5.9,29.7),BLUE,nil,false)
+ sign(m,base,"OCORRÊNCIAS",Vector3.new(24,11,49.8),Vector3.new(22,2.5,0.25),BLUE)
+ for x=28,41,1 do p("GradeDecorativa",Vector3.new(0.23,9,0.3),Vector3.new(x,5.5,38),STEEL,Enum.Material.Metal)end
+ sign(m,base,"CELA DE APOIO",Vector3.new(34,11.5,37.6),Vector3.new(15,2,0.25),BLUE)
+ for _,x in ipairs({-55,55})do plant(m,base,Vector3.new(x,0.8,-9))end
+ for _,x in ipairs({-25,25})do for _,z in ipairs({8,38})do lamp(m,base,Vector3.new(x,15.25,z))end end
+ local spawns={}
+ for i,x in ipairs({-38,0,38})do
+  spawns[i]=marker(m,base,"PoliceVehicleSpawn"..i,Vector3.new(x,0.8,-43))
+  for _,side in ipairs({-1,1})do p("MarcaVaga",Vector3.new(0.15,0.03,26),Vector3.new(x+side*7,0.83,-43),WHITE,nil,false)end
+ end
+ local intake=point(m,base,"SimulaçãoStudio",Vector3.new(-17,5,12),"Simular prisão (Studio)","Teste de 60 segundos",1)
+ local duty=point(m,base,"PlantaoDelegacia",Vector3.new(17,4.5,12),"Plantão policial","Entrar / sair do serviço",0.5)
+ local armory=point(m,base,"ArmariaDelegacia",Vector3.new(-26,5,32.8),"Retirar equipamento","Armaria policial",0.5)
+ local report=point(m,base,"OcorrenciasDelegacia",Vector3.new(24,5,25.8),"Registrar informe","Terminal de ocorrências",0.5)
+ local uniform=point(m,base,"UniformeDelegacia",Vector3.new(-26,5,45.2),"Retirar uniforme","Vestiário policial",0.5)
+ local vehicle=point(m,base,"ViaturaDelegacia",Vector3.new(-53,4,-26),"Retirar viatura","Garagem policial",0.5)
+ uniform:SetAttribute("Role","Policial");vehicle:SetAttribute("Role","Policial")
+ return intake,{dutyPrompts={duty},armoryPrompts={armory},reportPrompts={report}},
+  {uniformPrompts={uniform},vehiclePrompts={vehicle},vehicleSpawns=spawns}
 end
 
 local function prison(parent)
@@ -199,39 +213,47 @@ local function prison(parent)
 end
 
 function CivicBuilder.build(map)
-	if CivicBuilder.sites then return CivicBuilder.sites end
-	-- A reconstrução de referências preserva o mapa congelado desta versão.
-	local existing = map:FindFirstChild("CivicLocations")
-	if existing and map:GetAttribute("CivicReady") then
-		local stationModel = existing:FindFirstChild(Config.Station.Name)
-		CivicBuilder.sites = PrisonBuilder.build(existing)
-		assert(stationModel, "Delegacia ausente no mapa existente")
-		local function prompt(name)
-			local target = stationModel:FindFirstChild(name)
-			return target and target:FindFirstChildOfClass("ProximityPrompt")
-		end
-		CivicBuilder.sites.intakePrompt = assert(prompt("SimulaçãoStudio"), "Entrada de teste ausente")
-		local police = CivicBuilder.sites.police
-		for key, name in pairs({ dutyPrompts = "PlantaoDelegacia", armoryPrompts = "ArmariaDelegacia", reportPrompts = "OcorrenciasDelegacia" }) do
-			local target = prompt(name)
-			if target then table.insert(police[key], target) end
-		end
-		return CivicBuilder.sites
-	end
-	assert(not existing, "CivicLocations parcial já existe; restaure a versão completa antes de reconstruir.")
-	local locations = folder(map, "CivicLocations")
-	local roads = folder(map, "CivicRoads")
-	for _, road in ipairs(Config.Roads) do street(roads, road) end
-	CivicBuilder.sites = prison(locations)
-	local intake, stationPolice = station(locations)
-	CivicBuilder.sites.intakePrompt = intake
-	for key, prompts in pairs(stationPolice) do
-		for _, target in ipairs(prompts) do
-			table.insert(CivicBuilder.sites.police[key], target)
-		end
-	end
-	map:SetAttribute("CivicReady", true)
-	return CivicBuilder.sites
+ if CivicBuilder.sites then return CivicBuilder.sites end
+ local locations=map:FindFirstChild("CivicLocations")
+ local fresh=locations==nil
+ if fresh then
+  locations=folder(map,"CivicLocations")
+  local roads=folder(map,"CivicRoads")
+  for _,road in ipairs(Config.Roads)do street(roads,road)end
+ end
+ CivicBuilder.sites=prison(locations)
+ local stationModel=locations:FindFirstChild(Config.Station.Name)
+ local intake,police,workplace
+ if stationModel then
+  assert(stationModel:GetAttribute("Architecture")=="BlueGlassCivic","A delegacia antiga precisa ser regenerada para o Marco 5.3")
+  local function q(name)local target=assert(stationModel:FindFirstChild(name),name);return assert(target:FindFirstChildOfClass("ProximityPrompt"))end
+  local spawns={};for i=1,3 do spawns[i]=assert(stationModel:FindFirstChild("PoliceVehicleSpawn"..i))end
+  intake=q("SimulaçãoStudio")
+  police={dutyPrompts={q("PlantaoDelegacia")},armoryPrompts={q("ArmariaDelegacia")},reportPrompts={q("OcorrenciasDelegacia")}}
+  workplace={uniformPrompts={q("UniformeDelegacia")},vehiclePrompts={q("ViaturaDelegacia")},vehicleSpawns=spawns}
+ else intake,police,workplace=station(locations)end
+ CivicBuilder.sites.intakePrompt=intake
+ local function worldPath(points)
+  local result={};for _,p in ipairs(points)do table.insert(result,Config.Station.CFrame*p)end;return result
+ end
+ CivicBuilder.sites.stationRoutes={
+  {name="nova delegacia / recepção",points=worldPath({Vector3.new(0,4,-74),Vector3.new(0,4,-3),Vector3.new(17,4,12)})},
+  {name="nova delegacia / vestiário",points=worldPath({Vector3.new(0,4,-3),Vector3.new(-20,4,12),Vector3.new(-26,4,28),Vector3.new(-38,4,28),Vector3.new(-38,4,42),Vector3.new(-26,4,42)})},
+  {name="nova delegacia / garagem",points=worldPath({Vector3.new(0,4,-3),Vector3.new(0,4,-15),Vector3.new(-20,4,-20),Vector3.new(-53,4,-26)})},
+ }
+ for key,prompts in pairs(police)do
+  for _,target in ipairs(prompts)do table.insert(CivicBuilder.sites.police[key],target)end
+ end
+ local taxi=TaxiSiteBuilder.build(map)
+ CivicBuilder.sites.taxi=taxi
+ CivicBuilder.sites.workplaces={Policial=workplace,Taxista={uniformPrompts={taxi.uniformPrompt},vehiclePrompts={taxi.vehiclePrompt},vehicleSpawns=taxi.vehicleSpawns}}
+ if CivicBuilder.sites.prisonWorkplace then
+  for key,items in pairs(CivicBuilder.sites.prisonWorkplace)do
+   workplace[key]=workplace[key]or{}
+   for _,item in ipairs(items)do table.insert(workplace[key],item)end
+  end
+ end
+ map:SetAttribute("CivicReady",true)
+ return CivicBuilder.sites
 end
-
 return CivicBuilder

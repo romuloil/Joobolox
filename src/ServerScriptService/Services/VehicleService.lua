@@ -18,6 +18,7 @@ local SecurityService = require(script.Parent:WaitForChild("SecurityService"))
 local ZoneService = require(script.Parent:WaitForChild("ZoneService"))
 local CarBuilder = require(script.Parent:WaitForChild("CarBuilder"))
 local SeatService = require(script.Parent:WaitForChild("SeatService"))
+local WorkRoleService = require(script.Parent:WaitForChild("WorkRoleService"))
 
 local VehicleService = {}
 
@@ -233,317 +234,346 @@ end
 -- Carro
 ---------------------------------------------------------------------------
 
-local CAR = GameConfig.Cars[GameConfig.CarModel]
+local PERSONAL_CAR = GameConfig.Cars[GameConfig.CarModel]
+local workplaces, personalGarage = {}, nil
+local configuredPrompts = {}
+
+local function blocked(player)
+	return player:GetAttribute("Detained") or isStunned(player)
+end
 
 local function vehiclesFolder()
 	local f = Workspace:FindFirstChild("Vehicles")
-	if not f then
-		f = Instance.new("Folder")
-		f.Name = "Vehicles"
-		f.Parent = Workspace
-	end
+	if not f then f = Instance.new("Folder"); f.Name, f.Parent = "Vehicles", Workspace end
 	return f
+end
+
+local function carState(player, record, driving)
+	if uiUpdate and player.Parent == Players then
+		uiUpdate:FireClient(player, "CarState", {
+			driving = driving == true, workRole = record and record.role or nil,
+			name = record and record.spec.Name or nil,
+		})
+	end
 end
 
 local function destroyCar(player)
 	local c = cars[player]
 	cars[player] = nil
-	if c and c.model then
-		c.model:Destroy()
+	if c then
+		for _, seat in ipairs({ c.driver, c.passenger }) do
+			local occupant = seat and seat.Occupant
+			if occupant then occupant.Sit = false end
+		end
+		if c.model then c.model:Destroy() end
 	end
+	carState(player, nil, false)
 end
 
-local function charactersList()
+local function validRole(player, record)
+	return not record.role or WorkRoleService.hasRole(player, record.role)
+end
+
+function VehicleService.getCar(player)
+	local record = cars[player]
+	if record and record.model and record.model.Parent then return record end
+	return nil
+end
+
+function VehicleService.isDrivingWorkVehicle(player, role)
+	local record = VehicleService.getCar(player)
+	local _, humanoid = SecurityService.getLivingCharacter(player)
+	local accepted = record ~= nil and record.role == role and validRole(player, record)
+		and not blocked(player) and humanoid ~= nil and humanoid.SeatPart == record.driver
+	return accepted == true, record
+end
+
+function VehicleService.destroyWorkVehicle(player, role)
+	local record = VehicleService.getCar(player)
+	if record and record.role and (role == nil or record.role == role) then
+		destroyCar(player)
+		return true
+	end
+	return false
+end
+
+local function charactersList(player)
 	local list = {}
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p.Character then
-			table.insert(list, p.Character)
-		end
-	end
+	for _, p in ipairs(Players:GetPlayers()) do if p.Character then table.insert(list, p.Character) end end
 	local npcs = Workspace:FindFirstChild("NPCs")
-	if npcs then
-		table.insert(list, npcs)
-	end
+	if npcs then table.insert(list, npcs) end
+	local own = cars[player]
+	if own and own.model then table.insert(list, own.model) end
 	return list
 end
 
--- Procura um lugar livre para o carro perto do jogador (no chão, sem encostar em parede/cerca)
-local function findCarSpot(root)
+local function clearSpot(player, markerCf, spec)
+	local ignore = charactersList(player)
 	local ray = RaycastParams.new()
-	ray.FilterType = Enum.RaycastFilterType.Exclude
-	ray.FilterDescendantsInstances = charactersList()
+	ray.FilterType, ray.FilterDescendantsInstances = Enum.RaycastFilterType.Exclude, ignore
+	local p = markerCf.Position
+	local hit = Workspace:Raycast(p + Vector3.new(0, 12, 0), Vector3.new(0, -60, 0), ray)
+	if not hit then return nil end
+	local center = Vector3.new(p.X, hit.Position.Y + spec.Hover, p.Z)
+	local cf = CFrame.new(center) * markerCf.Rotation
 	local overlap = OverlapParams.new()
-	overlap.FilterType = Enum.RaycastFilterType.Exclude
-	overlap.FilterDescendantsInstances = charactersList()
+	overlap.FilterType, overlap.FilterDescendantsInstances = Enum.RaycastFilterType.Exclude, ignore
 	overlap.RespectCanCollide = true
+	-- Inclui o teto do sedã, além do chassi. As placas do chão ficam abaixo da caixa.
+	local parts = Workspace:GetPartBoundsInBox(cf * CFrame.new(0, 2.3, 0),
+		Vector3.new(spec.Width + 1, 7, spec.Length + 1), overlap)
+	if #parts > 0 or ZoneService.zoneAt(center) then return nil end
+	return cf
+end
+
+local function findCarSpot(player, root, spec)
 	local look = root.CFrame.LookVector
-	local yaw = math.atan2(-look.X, -look.Z)
-	local rotation = CFrame.Angles(0, yaw, 0)
-	local right = rotation.RightVector
-	local forward = rotation.LookVector
-	for _, offset in ipairs({ Vector3.zero, right * 9, -right * 9, forward * 12, -forward * 12, right * 18, -right * 18 }) do
-		local p = root.Position + offset
-		local hit = Workspace:Raycast(p + Vector3.new(0, 6, 0), Vector3.new(0, -30, 0), ray)
-		if hit then
-			local center = Vector3.new(p.X, hit.Position.Y + CAR.Hover, p.Z)
-			-- caixa do carro, começando um pouco acima do chão (calçada e meio-fio não contam)
-			local box = CFrame.new(center + Vector3.new(0, 0.6, 0)) * rotation
-			local parts = Workspace:GetPartBoundsInBox(box, Vector3.new(CAR.Width + 0.6, 3, CAR.Length + 0.6), overlap)
-			if #parts == 0 and not ZoneService.zoneAt(center) then
-				return CFrame.new(center) * rotation
-			end
+	local rotation = CFrame.Angles(0, math.atan2(-look.X, -look.Z), 0)
+	local right, forward = rotation.RightVector, rotation.LookVector
+	for _, offset in ipairs({ right * 9, -right * 9, forward * 12, -forward * 12, right * 18, -right * 18 }) do
+		local found = clearSpot(player, CFrame.new(root.Position + offset) * rotation, spec)
+		if found then return found end
+	end
+	return nil
+end
+
+local function nearPrompt(player, prompt)
+	local _, _, root = SecurityService.getLivingCharacter(player)
+	local parent = prompt and prompt.Parent
+	local target = parent and (parent:IsA("BasePart") and parent.Position or parent:IsA("Attachment") and parent.WorldPosition)
+	return root and target and (root.Position - target).Magnitude <= 11
+end
+
+local function nearAny(player, prompts)
+	for _, prompt in ipairs(prompts or {}) do if nearPrompt(player, prompt) then return true end end
+	return false
+end
+
+local function padSpot(player, pads, spec)
+	for _, pad in ipairs(pads or {}) do
+		if pad and pad:IsA("BasePart") and pad.Parent then
+			local found = clearSpot(player, pad.CFrame, spec)
+			if found then return found end
 		end
 	end
 	return nil
 end
 
 local function sitInCar(player, humanoid)
-	if player:GetAttribute("Detained") or isStunned(player) then
-		return false
-	end
-	local c = cars[player]
-	if not c or not c.driver.Parent or c.driver.Occupant then
-		return false
-	end
-	if bikes[player] then
-		dismount(player)
-	end
+	if blocked(player) then return false end
+	local c = VehicleService.getCar(player)
+	if not c or not validRole(player, c) or not c.driver.Parent or c.driver.Occupant then return false end
+	if bikes[player] then dismount(player) end
 	c.driver:Sit(humanoid)
 	return true
 end
 
-local function spawnCar(player, humanoid, root)
-	local spot = findCarSpot(root)
-	if not spot then
-		notice(player, "Sem espaço para o carro aqui. Vá para a rua!")
-		return
-	end
+local function spawnCar(player, humanoid, spec, spot, role)
+	if blocked(player) or (role and not WorkRoleService.hasRole(player, role)) then return false end
+	local ok, model, driver, passenger = pcall(CarBuilder.build, spec, spot)
+	if not ok then warn("[VehicleService] Falha ao construir veículo: " .. tostring(model)); return false end
+	if blocked(player) or (role and not WorkRoleService.hasRole(player, role)) then model:Destroy(); return false end
 	destroyCar(player)
-	local model, driver, passenger = CarBuilder.build(CAR, spot)
-	model.Name = player.Name .. "_" .. CAR.Name
+	model.Name = player.Name .. "_" .. spec.Name
 	model:SetAttribute("Owner", player.UserId)
+	model:SetAttribute("WorkRole", role)
+	model:SetAttribute("Spec", spec.Name)
 	model.Parent = vehiclesFolder()
 	SeatService.setup(passenger, "Carona")
-	cars[player] = { model = model, driver = driver }
-
+	local record = { model = model, driver = driver, passenger = passenger, spec = spec, role = role }
+	cars[player] = record
 	local chassis = model.PrimaryPart
-	-- Portas abrem um instante quando alguém entra ou sai (o cliente anima)
 	local doorToken = 0
 	local function flashDoors()
 		doorToken += 1
 		local token = doorToken
 		model:SetAttribute("DoorsOpen", true)
-		task.delay(1.6, function()
-			if token == doorToken and model.Parent then
-				model:SetAttribute("DoorsOpen", false)
-			end
-		end)
+		task.delay(1.6, function() if token == doorToken and model.Parent then model:SetAttribute("DoorsOpen", false) end end)
 	end
-	-- Quem senta no banco do motorista passa a controlar a física do carro
 	driver:GetPropertyChangedSignal("Occupant"):Connect(function()
+		if cars[player] ~= record or not model.Parent then return end
 		flashDoors()
 		local occupant = driver.Occupant
 		local who = occupant and Players:GetPlayerFromCharacter(occupant.Parent)
-		if occupant and (who ~= player or player:GetAttribute("Detained") or isStunned(player)) then
-			occupant.Sit = false -- só o dono dirige
-			return
-		end
+		if occupant and (who ~= player or blocked(player) or not validRole(player, record)) then occupant.Sit = false; return end
 		if who then
-			pcall(function()
-				chassis:SetNetworkOwner(who)
-			end)
-			uiUpdate:FireClient(player, "CarState", { driving = true })
+			pcall(function() chassis:SetNetworkOwner(who) end)
+			carState(player, record, true)
 		else
-			-- saiu: o carro fica parado onde está, virado para o mesmo lado
-			local drive = chassis:FindFirstChildOfClass("LinearVelocity")
+			local velocity = chassis:FindFirstChildOfClass("LinearVelocity")
 			local upright = chassis:FindFirstChildOfClass("AlignOrientation")
-			if drive then
-				drive.VectorVelocity = Vector3.zero
-			end
-			if upright then
-				local look = chassis.CFrame.LookVector
-				upright.CFrame = CFrame.Angles(0, math.atan2(-look.X, -look.Z), 0)
-			end
-			pcall(function()
-				chassis:SetNetworkOwner(nil)
-			end)
-			uiUpdate:FireClient(player, "CarState", { driving = false })
+			if velocity then velocity.VectorVelocity = Vector3.zero end
+			if upright then local look = chassis.CFrame.LookVector; upright.CFrame = CFrame.Angles(0, math.atan2(-look.X, -look.Z), 0) end
+			pcall(function() chassis:SetNetworkOwner(nil) end)
+			carState(player, record, false)
 		end
 	end)
-
-	-- Entrar de novo: E perto da porta do motorista (só o dono)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.Name = "DrivePrompt"
-	prompt.ActionText = "Dirigir"
-	prompt.ObjectText = CAR.Name
-	prompt.KeyboardKeyCode = Enum.KeyCode.E
-	prompt.MaxActivationDistance = 9
-	prompt.RequiresLineOfSight = false
+	prompt.Name, prompt.ActionText, prompt.ObjectText = "DrivePrompt", "Dirigir", spec.Name
+	prompt.KeyboardKeyCode, prompt.MaxActivationDistance, prompt.RequiresLineOfSight = Enum.KeyCode.E, 9, false
 	prompt.Parent = driver
 	prompt.Triggered:Connect(function(who)
-		if who ~= player then
-			notice(who, "Esse carro é de " .. player.DisplayName .. ".")
-			return
-		end
+		if who ~= player then notice(who, "Esse veículo pertence a " .. player.DisplayName .. "."); return end
+		if not nearPrompt(player, prompt) or not SecurityService.checkRate(player, "DrivePrompt", 0.5) then return end
 		local _, hum = SecurityService.getLivingCharacter(player)
-		if hum and not hum.SeatPart then
-			sitInCar(player, hum)
-		end
+		if hum and not hum.SeatPart then sitInCar(player, hum) end
 	end)
-
+	if bikes[player] then dismount(player) end
 	sitInCar(player, humanoid)
+	carState(player, record, humanoid.SeatPart == driver)
+	return true, record
 end
 
 local function exitCar(player, humanoid)
-	local c = cars[player]
-	if not c then
-		return
-	end
+	local c = VehicleService.getCar(player)
+	if not c then return end
 	local seatWeld = c.driver:FindFirstChild("SeatWeld")
-	if seatWeld then
-		seatWeld:Destroy()
-	end
+	if seatWeld then seatWeld:Destroy() end
 	humanoid.Sit = false
 	task.wait()
 	local character = player.Character
-	local chassis = c.model.PrimaryPart
-	if character and chassis then
-		-- desce pela porta do motorista (lado esquerdo)
-		character:PivotTo(chassis.CFrame * CFrame.new(-(CAR.Width / 2 + 2.5), 1, 0))
+	local chassis = c.model and c.model.PrimaryPart
+	if character and chassis and c.model.Parent then character:PivotTo(chassis.CFrame * CFrame.new(-(c.spec.Width / 2 + 2.5), 1, 0)) end
+end
+
+function VehicleService.requestWorkVehicle(player, role)
+	if type(role) ~= "string" or blocked(player) then return false end
+	local entry = workplaces[role]
+	local specId = GameConfig.WorkCars and GameConfig.WorkCars[role]
+	local spec = specId and GameConfig.Cars[specId]
+	if not entry or not spec or not WorkRoleService.hasRole(player, role) or not nearAny(player, entry.vehiclePrompts) then
+		notice(player, "Retire o veículo na garagem do seu emprego, enquanto estiver em serviço.")
+		return false
+	end
+	if not SecurityService.checkRate(player, "WorkVehiclePickup", 1) then return false end
+	local _, humanoid = SecurityService.getLivingCharacter(player)
+	if not humanoid then return false end
+	if humanoid.SeatPart then notice(player, "Saia do veículo antes de retirar outro na garagem."); return false end
+	local spot = padSpot(player, entry.vehicleSpawns, spec)
+	if not spot then notice(player, "As vagas estão ocupadas. Libere uma vaga antes de retirar o veículo."); return false end
+	return spawnCar(player, humanoid, spec, spot, role)
+end
+
+function VehicleService.requestPersonalAtGarage(player)
+	if blocked(player) or not personalGarage or not nearPrompt(player, personalGarage.prompt) then return false end
+	if not SecurityService.checkRate(player, "PersonalGarage", 1) then return false end
+	local _, humanoid = SecurityService.getLivingCharacter(player)
+	if not humanoid then return false end
+	if humanoid.SeatPart then notice(player, "Saia do veículo antes de retirar outro na garagem."); return false end
+	-- O Vortex é o único veículo pessoal já concedido no protótipo. O posto nunca
+	-- entrega um táxi/viatura e não concede outros modelos ou compras.
+	local spot = padSpot(player, personalGarage.spawns, PERSONAL_CAR)
+	if not spot then notice(player, "A garagem está ocupada. Aguarde uma vaga livre."); return false end
+	return spawnCar(player, humanoid, PERSONAL_CAR, spot, nil)
+end
+
+function VehicleService.configureWorkplaces(entries, garage)
+	workplaces, personalGarage = entries or {}, garage
+	for role, entry in pairs(workplaces) do
+		for _, prompt in ipairs(entry.vehiclePrompts or {}) do
+			if not configuredPrompts[prompt] then
+				configuredPrompts[prompt] = true; prompt.Enabled = true
+				prompt.Triggered:Connect(function(player) VehicleService.requestWorkVehicle(player, role) end)
+			end
+		end
+	end
+	if garage and garage.prompt and not configuredPrompts[garage.prompt] then
+		configuredPrompts[garage.prompt] = true; garage.prompt.Enabled = true
+		garage.prompt.Triggered:Connect(VehicleService.requestPersonalAtGarage)
 	end
 end
 
 local function toggleCar(player)
-	if player:GetAttribute("Detained") or isStunned(player) then
-		return
-	end
+	if blocked(player) then return end
 	local character, humanoid, root = SecurityService.getLivingCharacter(player)
-	if not character then
-		return
-	end
-	local c = cars[player]
-	if c and humanoid.SeatPart == c.driver then
-		exitCar(player, humanoid)
-		return
-	end
-	if humanoid.SeatPart then
-		return -- sentado em outro banco
-	end
-	if ZoneService.isInside(player) then
-		notice(player, "Aqui dentro não dá para usar o carro.")
-		return
-	end
-	-- Carro perto: entra nele. Longe (ou nenhum): chama um novo do seu lado.
+	if not character then return end
+	local c = VehicleService.getCar(player)
+	if c and not validRole(player, c) then destroyCar(player); c = nil end
+	if c and humanoid.SeatPart == c.driver then exitCar(player, humanoid); return end
+	if humanoid.SeatPart then return end
+	if ZoneService.isInside(player) then notice(player, "Aqui dentro não dá para usar o carro."); return end
 	local chassis = c and c.model.PrimaryPart
-	if chassis and (chassis.Position - root.Position).Magnitude < 40 and sitInCar(player, humanoid) then
+	if chassis and (chassis.Position - root.Position).Magnitude < 18 and sitInCar(player, humanoid) then return end
+	if c and c.role then
+		notice(player, "Seu veículo de trabalho fica onde foi estacionado. Busque-o ou retire outro na garagem do emprego.")
 		return
 	end
-	if bikes[player] then
-		dismount(player)
-	end
-	spawnCar(player, humanoid, root)
+	local spot = findCarSpot(player, root, PERSONAL_CAR)
+	if not spot then notice(player, "Sem espaço para o carro aqui. Vá para a rua!"); return end
+	spawnCar(player, humanoid, PERSONAL_CAR, spot, nil)
 end
 
--- Velocidade impossível = trava o carro (o motorista controla a física, então o servidor confere)
 local function watchCarSpeed()
 	while true do
 		task.wait(1)
 		for player, c in pairs(cars) do
-			local chassis = c.model and c.model.PrimaryPart
-			if chassis and chassis.AssemblyLinearVelocity.Magnitude > CAR.MaxSpeed * 1.6 then
-				warn(("[VehicleService] Velocidade estranha no carro de %s; carro parado."):format(player.Name))
-				local _, humanoid = SecurityService.getLivingCharacter(player)
-				if humanoid and humanoid.SeatPart == c.driver then
-					exitCar(player, humanoid)
+			if not c.model.Parent or not validRole(player, c) then destroyCar(player)
+			else
+				local chassis = c.model.PrimaryPart
+				local speed = chassis and chassis.AssemblyLinearVelocity.Magnitude
+				if speed and (speed ~= speed or speed > c.spec.MaxSpeed * 1.6) then
+					local _, humanoid = SecurityService.getLivingCharacter(player)
+					if humanoid and humanoid.SeatPart == c.driver then exitCar(player, humanoid) end
+					if chassis.Parent then chassis.AssemblyLinearVelocity = Vector3.zero end
 				end
-				chassis.AssemblyLinearVelocity = Vector3.zero
 			end
 		end
 	end
 end
 
 local function onVehicleRequest(player, action)
-	-- 1. limite de frequência antes de qualquer coisa
-	if not SecurityService.checkRate(player, "VehicleRequest", BIKE.ToggleCooldown) then
-		return
-	end
-	-- 2. tipo do argumento
-	if not SecurityService.isShortString(action, 16) then
-		return
-	end
-	if player:GetAttribute("Detained") or isStunned(player) then
-		notice(player, "Você não pode usar veículos durante a detenção ou imobilização.")
-		return
-	end
-	-- 3. ação conhecida
+	if not SecurityService.checkRate(player, "VehicleRequest", BIKE.ToggleCooldown) or not SecurityService.isShortString(action, 16) then return end
+	if blocked(player) then notice(player, "Você não pode usar veículos durante a detenção ou imobilização."); return end
 	if action == "ToggleBike" then
-		if bikes[player] and bikes[player].Parent then
-			dismount(player)
-		else
-			mount(player)
-		end
-	elseif action == "ToggleCar" then
-		if SecurityService.checkRate(player, "Car", GameConfig.CarCooldown) then
-			toggleCar(player)
-		end
-	end
+		if bikes[player] and bikes[player].Parent then dismount(player) else mount(player) end
+	elseif action == "ToggleCar" and SecurityService.checkRate(player, "Car", GameConfig.CarCooldown) then toggleCar(player) end
 end
 
--- Usado pelo SeatService: desce da bike antes de sentar num banco
 function VehicleService.dismount(player)
-	if bikes[player] then
-		dismount(player)
-	end
+	if bikes[player] then dismount(player) end
 end
 
--- Retira também o carro já estacionado, antes de levar o jogador à prisão.
 function VehicleService.prepareForDetention(player)
 	local character, humanoid = SecurityService.getLivingCharacter(player)
 	local seat = humanoid and humanoid.SeatPart
 	local weld = seat and seat:FindFirstChild("SeatWeld")
 	if weld and weld:IsA("Weld") then
-		if (weld.Part0 and weld.Part0:IsDescendantOf(character))
-			or (weld.Part1 and weld.Part1:IsDescendantOf(character)) then
-			weld:Destroy()
-		end
+		if (weld.Part0 and weld.Part0:IsDescendantOf(character)) or (weld.Part1 and weld.Part1:IsDescendantOf(character)) then weld:Destroy() end
 	end
-	if humanoid then
-		humanoid.Sit = false
-		humanoid.WalkSpeed = GameConfig.WalkSpeed
-	end
-	if bikes[player] then
-		dismount(player)
-	end
+	if humanoid then humanoid.Sit = false; humanoid.WalkSpeed = GameConfig.WalkSpeed end
+	if bikes[player] then dismount(player) end
 	destroyCar(player)
-	uiUpdate:FireClient(player, "CarState", { driving = false })
 end
 
 function VehicleService.init(remotes)
 	uiUpdate = remotes[GameConfig.Remotes.UIUpdate]
 	remotes[GameConfig.Remotes.VehicleRequest].OnServerEvent:Connect(onVehicleRequest)
-
 	local function onPlayerAdded(player)
-		player.CharacterAdded:Connect(function()
-			-- personagem novo começa a pé (a bicicleta antiga sumiu junto com o corpo)
-			bikes[player] = nil
-			sendState(player, false)
-		end)
+		local function watchCharacter(character)
+			bikes[player] = nil; destroyCar(player); sendState(player, false)
+			local function watchDeath(humanoid)
+				if humanoid and humanoid.Died then
+					humanoid.Died:Connect(function()
+						if player.Character == character then bikes[player] = nil; destroyCar(player); sendState(player, false) end
+					end)
+				end
+			end
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then watchDeath(humanoid)
+			else task.spawn(function() watchDeath(character:WaitForChild("Humanoid", 10)) end) end
+		end
+		player.CharacterAdded:Connect(watchCharacter)
+		if player.Character then watchCharacter(player.Character) end
 	end
 	Players.PlayerAdded:Connect(onPlayerAdded)
-	for _, player in ipairs(Players:GetPlayers()) do
-		onPlayerAdded(player)
-	end
-	Players.PlayerRemoving:Connect(function(player)
-		bikes[player] = nil
-		destroyCar(player)
-	end)
-
-	-- Entrou num local de trabalho de bike: desce na hora
+	for _, player in ipairs(Players:GetPlayers()) do onPlayerAdded(player) end
+	Players.PlayerRemoving:Connect(function(player) bikes[player] = nil; destroyCar(player) end)
 	ZoneService.onChange(function(player, inside)
-		if inside and bikes[player] then
-			dismount(player)
-			notice(player, "Bike guardada: aqui é local de trabalho.")
-		end
+		if inside and bikes[player] then dismount(player); notice(player, "Bike guardada: aqui é local de trabalho.") end
+	end)
+	WorkRoleService.onChanged(function(player, newRole)
+		local c = VehicleService.getCar(player)
+		if c and c.role and c.role ~= newRole then destroyCar(player) end
 	end)
 	task.spawn(watchCarSpeed)
 end

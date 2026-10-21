@@ -317,6 +317,7 @@ local function renderPanel()
 		end, state.onDuty and ORANGE or BLUE)
 		paragraph("Retire o kit no arsenal. O lançador de água imobiliza suspeitos válidos; as algemas exigem aproximação. O policial não pode prender cidadãos inocentes.", 82)
 		paragraph("Na prisão: faça a ronda, consulte ocorrências, opere acessos e pratique no setor de treinamento.", 60)
+		paragraph("Retire o uniforme no vestiário e a viatura na garagem policial. Ambos são devolvidos ao encerrar o plantão.", 62)
 	elseif currentPanel == "armory" then
 		paragraph("Kit de serviço: lançador de água, algemas, lanterna e rádio. O equipamento é temporário e só funciona em serviço.", 62)
 		button(content, "Retirar / repor meu kit", function() send("Gear") end)

@@ -109,6 +109,13 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 			isShortString = function(value, length) return type(value) == "string" and #value > 0 and #value <= length end,
 		}
 		m.load("GameConfig", "return {Remotes={UIUpdate='UIUpdate',PoliceRequest='PoliceRequest'}}")
+		local workRoles = {}
+		m.load("WorkRoleService", "return {}", true)
+		m.registry.WorkRoleService = {
+			assign = function(p, role) if workRoles[p] and workRoles[p] ~= role then return false end; workRoles[p] = role; return true end,
+			clear = function(p, expected) if expected and workRoles[p] ~= expected then return false end; workRoles[p] = nil; return true end,
+			hasRole = function(p, role) return workRoles[p] == role end,
+		}
 		m.load("PoliceConfig", configSource)
 		m.load("PoliceRules", rulesSource)
 		local service = m.load("PoliceService", serviceSource, true)

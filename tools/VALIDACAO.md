@@ -1,48 +1,53 @@
-# Validação do código
+# Validação do código — Marco 5.3
 
-Os testes usam o compilador e o interpretador oficiais do Luau. Eles verificam
-sintaxe, regras de detenção/fuga/polícia e decisões dos serviços com relógio,
-eventos, ferramentas e raycasts controlados. Não executam o motor Roblox:
-visual, colisões reais, animações, replicação e desempenho ainda precisam de
-teste no Roblox Studio.
-
-No ambiente usado para esta entrega:
+O comando único compila todos os scripts e executa os serviços reais com relógio,
+eventos, consultas espaciais e instâncias simuladas. Nenhum teste baixa ferramentas,
+roda o Roblox Studio ou publica o jogo.
 
 ```sh
 python tools/validate_luau.py --luau-dir /workspace/tooling/luau-0.698/source
 ```
 
-Para preparar as ferramentas em outra máquina com Git, GNU Make e um compilador
-C++17, use o código oficial, preservando TLS e a revisão abaixo:
+Ferramentas usadas nesta execução: Luau oficial 0.698, revisão
+`ff6d381e57bcd1799d850d7fabe543c0f0980a5d`. Para preparar outro ambiente com Git,
+GNU Make e compilador C++17, preserve TLS e a revisão:
 
 ```sh
 git clone --depth 1 --branch 0.698 https://github.com/luau-lang/luau.git luau-tools
 git -C luau-tools rev-parse HEAD
-# Revisão esperada: ff6d381e57bcd1799d850d7fabe543c0f0980a5d
+# Esperado: ff6d381e57bcd1799d850d7fabe543c0f0980a5d
 make -C luau-tools -j2 config=release luau luau-compile
 python tools/validate_luau.py --luau-dir /caminho/para/luau-tools
 ```
 
-Os stubs em `tests/roblox_geometry_mock.luau` implementam apenas o subconjunto de
-valores e objetos usado pelos testes. O gerador pseudoaleatório do stub não é o
-gerador interno do Roblox; resultados de contagem de lotes não são uma previsão
-exata da cena no Studio. A geometria fixa, os pontos da prisão e suas distâncias
-podem ser verificados sem renderização.
+Resultado verificado:
 
-Os testes do serviço prisional executam `PrisonService` com relógio controlado:
-pena de 60 segundos, 16 celas individuais, bloqueio inicial de 15 segundos,
-abertura automática, reset sem renovar prazos, lotação, reutilização de celas,
-controle manual de portas e impedimento de fechar uma porta sobre o personagem.
-Incluem o caso de um suspeito imobilizado chegar com velocidade zero e precisar
-sair da prisão andando normalmente.
+- 53/53 scripts compilados.
+- Regras: prisão 42, polícia 34, empregos/uniformes 39 e táxi 19 verificações.
+- Ciclos reais de serviço: prisão 117, polícia 74, empregos/uniformes 87,
+  veículos 25 e táxi 41 verificações.
+- Moradores: 85 verificações executando o serviço sobre o mapa real com consultas
+  geométricas simuladas e a fábrica NPCKit substituída por um objeto controlado.
+- Geometria: 73.227 verificações; prédio da delegacia e LXR acessíveis, celas/portas,
+  rota da prisão, quatro torres, trilha espaçada, posto distante e 11 vagas de
+  retirada sem obstáculos para um envelope de sedã.
 
-Os testes policiais executam `PoliceService`, incluindo três vagas, retirada e
-devolução de equipamentos, informes com categorias permitidas, distância dos
-terminais, controle seguro de acessos e celas, ordem da ronda, treino com alvo e
-captura exigindo suspeita interna, imobilização, algemas equipadas e visibilidade.
-Os raycasts são respostas programadas, não simulação de física; validam a decisão
-do serviço diante de um acerto, uma parede ou ausência de alvo. Tweens de porta
-aplicam o destino final no stub e não demonstram a animação real.
+Os testes de uniforme exercitam avatares R6/R15, retirada por proximidade e emprego,
+atributos forjados, devolução e restauração de roupas/chapéus. Veículos usam o próprio
+CarBuilder e verificam garagem, papel, bloqueio de recolocação pelo V e limpeza ao
+sair/morrer. Táxi verifica motorista/veículo correto, passageiro, distância percorrida,
+teleporte, reserva de assento, pagamento uma única vez e cancelamento durante criação
+de NPC. Moradores verificam imobilidade, limite compartilhado de NPCs, diálogo por
+proximidade e troca de ponto quando há obstáculo.
 
-Nenhum teste converte publicação no GitHub, geração de XML ou aprovação de regras
-em comprovação de que o jogo foi executado no Roblox Studio.
+## Limites
+
+Os objetos de `tests/roblox_geometry_mock.luau` e `tests/service_fixture.luau` não
+substituem o motor Roblox. Não simulam condução, Humanoid, física, renderização,
+replicação, DataStore, carregamento de avatares online nem desempenho. A geometria
+usa envelopes e tolerância de degrau de até 0,8 stud; o gerador aleatório de teste
+difere do Roblox, portanto posições/contagens de prédios podem variar no Studio.
+
+Teste visual e funcional no Studio continua necessário, principalmente condução dos
+sedãs, pose do passageiro, vestimenta em avatares diferentes, interfaces no celular,
+diálogos e salvamento do pagamento. Não desabilite validações para ocultar falhas.

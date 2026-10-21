@@ -16,7 +16,7 @@ return function(mock, GameConfig, Config, CivicBuilder)
  check(not sites.intakePrompt.Enabled, "test intake disabled until service verifies Studio")
  check(station:GetAttribute("Kind") == "Police", "station map kind")
  check(prison:GetAttribute("Kind") == "Prison", "prison map kind")
- check((station:GetAttribute("MapPosition")).Magnitude < 400, "station amid city")
+ check((station:GetAttribute("MapPosition")).Magnitude < 610, "station in an open urban block")
  check((prison:GetAttribute("MapPosition")).Magnitude > 850, "prison outside city")
  local function inBounds(point)
   local p=sites.prisonBounds.cf:PointToObjectSpace(point)
@@ -94,7 +94,8 @@ return function(mock, GameConfig, Config, CivicBuilder)
   end
  end
  local v=mock.Vector3.new
- path(Config.Station.CFrame,{v(0,4,-34),v(0,4,-12),v(-10,4,-8)},"station entrance/intake")
+ for _,route in ipairs(sites.stationRoutes or {})do path(mock.CFrame.new(),route.points,route.name or "station")end
+ for _,route in ipairs(sites.taxi.validationRoutes or {})do path(mock.CFrame.new(),route.points,route.name or "LXR taxi")end
  check(type(sites.escapeDoors)=="table" and #sites.escapeDoors>=1,"escape route has a controlled physical hatch")
  for _,door in ipairs(sites.escapeDoors) do
   local entry=door.part.Position+v(0,sites.prisonSpawn.Position.Y-door.part.Position.Y,0)
@@ -158,6 +159,29 @@ return function(mock, GameConfig, Config, CivicBuilder)
   check(type(route.points)=="table" and #route.points>=2,"walkingroute contains endpoints")
   path(mock.CFrame.new(),route.points,route.name or "complexprison",route.stairs)
   for _,door in ipairs(changed) do door.part.CFrame=door.cf end
+ end
+ -- A distant personal garage must not trivialize or advertise the prison exit.
+ check(sites.personalGarage and #sites.personalGarage.spawns==2,"fuel site provides two personal vehicle pads")
+ local lastExit=sites.escapeSteps[#sites.escapeSteps].Parent.Position
+ local garagePosition=sites.personalGarage.prompt.Parent.Position
+ check((garagePosition-lastExit).Magnitude>160,"convenience is separated from the escape exit")
+ check(sites.postEscapeRoute and #sites.postEscapeRoute>=3,"discreet post-escape trail has spaced waypoints")
+ path(mock.CFrame.new(),sites.postEscapeRoute,"post-escape walking trail")
+ check(#sites.taxi.pickupPoints>=6,"LXR dispatch has at least six street pickup points")
+ check((sites.taxi.model:GetAttribute("MapPosition")-Config.Taxi.CFrame.Position).Magnitude<0.01,"LXR HQ map marker matches reserved lot")
+ for role,workplace in pairs(sites.workplaces)do
+  check(#workplace.uniformPrompts>0,"job workplace has a uniform wardrobe: "..role)
+  check(#workplace.vehiclePrompts>0 and #workplace.vehicleSpawns>=3,"job vehicle pickup stays at workplace: "..role)
+ end
+ local allPads={}
+ for _,workplace in pairs(sites.workplaces)do for _,pad in ipairs(workplace.vehicleSpawns)do table.insert(allPads,pad)end end
+ for _,pad in ipairs(sites.personalGarage.spawns)do table.insert(allPads,pad)end
+ for _,pad in ipairs(allPads)do
+  -- A sedan-sized envelope includes mirrors, roof sign and occupant head space.
+  local probe={Position=pad.Position+v(0,4.6,0),Size=v(14,7,24),CFrame=pad.CFrame*mock.CFrame.new(0,4.6,0)}
+  for _,solid in ipairs(blockers)do
+   check(not planarOverlap(probe,solid),"vehicle pad intersects solid geometry: "..pad.Name.."/"..solid.Name)
+  end
  end
  check(clear(sites.prisonRelease.Position),"release position has avatar clearance")
  -- Guard towers use four low-rise flights, not the former steep two-flight stair.

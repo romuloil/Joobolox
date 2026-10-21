@@ -44,41 +44,45 @@ def main() -> int:
     print(f"Luau compile: {len(scripts) - len(failures)}/{len(scripts)} game scripts passed")
     if failures:
         return 1
-    for test in [root / "tests" / "prison_rules_spec.luau", root / "tests" / "police_rules_spec.luau"]:
+    for name in ["prison_rules_spec.luau", "police_rules_spec.luau", "work_role_rules_spec.luau", "taxi_rules_spec.luau"]:
+        test = root / "tests" / name
+        if not test.exists():
+            continue
         result = subprocess.run([runner, str(test)], cwd=root)
         if result.returncode:
             return result.returncode
-    mock = root / "tests" / "roblox_geometry_mock.luau"
-    spec = root / "tests" / "prison_service_spec.luau"
-    program = "local spec = (function()\n" + spec.read_text() + "\nend)()\n"
-    program += "spec(" + ",\n".join(luau_string(path.read_text()) for path in [
-        mock, root / "src/ReplicatedStorage/Shared/PrisonRules.lua",
-        root / "src/ServerScriptService/Services/PrisonService.lua",
-    ]) + ")\n"
-    with tempfile.TemporaryDirectory(prefix="littlelife-luau-") as directory:
-        target = Path(directory) / "service_spec.luau"
-        target.write_text(program)
-        result = subprocess.run([runner, str(target)], cwd=root)
-        if result.returncode:
-            return result.returncode
-    police_spec = root / "tests" / "police_service_spec.luau"
-    program = "local spec = (function()\n" + police_spec.read_text() + "\nend)()\n"
-    program += "spec(" + ",\n".join(luau_string(path.read_text()) for path in [
-        mock, root / "src/ReplicatedStorage/Shared/PoliceConfig.lua",
-        root / "src/ReplicatedStorage/Shared/PoliceRules.lua",
-        root / "src/ServerScriptService/Services/PoliceService.lua",
-    ]) + ")\n"
-    with tempfile.TemporaryDirectory(prefix="littlelife-police-luau-") as directory:
-        target = Path(directory) / "police_spec.luau"
-        target.write_text(program)
-        result = subprocess.run([runner, str(target)], cwd=root)
-        if result.returncode:
-            return result.returncode
+    mock = root / "tests/roblox_geometry_mock.luau"
+    fixture = root / "tests/service_fixture.luau"
+    specs = [
+        ("prison_service_spec.luau", [mock, root / "src/ReplicatedStorage/Shared/PrisonRules.lua", root / "src/ServerScriptService/Services/PrisonService.lua"]),
+        ("police_service_spec.luau", [mock, root / "src/ReplicatedStorage/Shared/PoliceConfig.lua", root / "src/ReplicatedStorage/Shared/PoliceRules.lua", root / "src/ServerScriptService/Services/PoliceService.lua"]),
+        ("work_role_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/WorkRoleConfig.lua", root / "src/ReplicatedStorage/Shared/WorkRoleRules.lua", root / "src/ServerScriptService/Services/WorkRoleService.lua"]),
+        ("vehicle_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/GameConfig.lua", root / "src/ServerScriptService/Services/CarBuilder.lua", root / "src/ServerScriptService/Services/VehicleService.lua"]),
+        ("taxi_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/TaxiConfig.lua", root / "src/ReplicatedStorage/Shared/TaxiRules.lua", root / "src/ServerScriptService/Services/TaxiService.lua"]),
+    ]
+    for name, sources in specs:
+        spec = root / "tests" / name
+        if not spec.exists():
+            continue
+        if not all(path.exists() for path in sources):
+            raise RuntimeError(f"Missing implementation source for {name}")
+        program = "local spec = (function()\n" + spec.read_text() + "\nend)()\n"
+        program += "spec(" + ",\n".join(luau_string(path.read_text()) for path in sources) + ")\n"
+        with tempfile.TemporaryDirectory(prefix="littlelife-test-") as directory:
+            target = Path(directory) / name
+            target.write_text(program)
+            result = subprocess.run([runner, str(target)], cwd=root)
+            if result.returncode:
+                return result.returncode
     geometry = root / "tests" / "validate_geometry.py"
     if geometry.exists():
         result = subprocess.run([sys.executable, str(geometry), "--luau", runner], cwd=root)
         if result.returncode:
             return result.returncode
+    npc = root / "tests" / "validate_street_npcs.py"
+    result = subprocess.run([sys.executable, str(npc), "--luau", runner], cwd=root)
+    if result.returncode:
+        return result.returncode
     return 0
 
 

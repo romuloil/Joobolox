@@ -199,6 +199,14 @@ function PrisonBuilder.recover(parent)
  result.prisonBounds={cf=base*CFrame.new(Config.Prison.BoundsCenter),half=Config.Prison.BoundsHalf}
  police.trainingSpawn=m:FindFirstChild("TrainingSpawn",true);police.trainingTarget=m:FindFirstChild("TrainingTarget",true)
  table.sort(police.patrolPrompts,function(a,b)return tonumber(a:GetAttribute("PatrolId"))<tonumber(b:GetAttribute("PatrolId"))end)
+ local container=parent.Name==Config.Prison.Name and parent.Parent or parent
+ local fuel=container:FindFirstChild(Config.Fuel.Name)
+ assert(fuel,"Posto afastado ausente")
+ local personal=fuel:FindFirstChild("GaragemPessoal",true)
+ result.personalGarage={prompt=assert(personal):FindFirstChildOfClass("ProximityPrompt"),spawns={assert(fuel:FindFirstChild("PersonalVehicleSpawn1",true)),assert(fuel:FindFirstChild("PersonalVehicleSpawn2",true))}}
+ local uniform=m:FindFirstChild("UniformePrisão",true);local vehicle=m:FindFirstChild("ViaturaPrisão",true)
+ local spawns={};for i=1,3 do spawns[i]=assert(m:FindFirstChild("PrisonPoliceVehicleSpawn"..i,true))end
+ result.prisonWorkplace={uniformPrompts={assert(uniform):FindFirstChildOfClass("ProximityPrompt")},vehiclePrompts={assert(vehicle):FindFirstChildOfClass("ProximityPrompt")},vehicleSpawns=spawns}
  cached=result;return result
 end
 
@@ -213,14 +221,15 @@ function PrisonBuilder.build(parent)
  local p=function(name,size,pos,color,material,collide)return part(m,base,name,size,pos,color,material,collide)end
  p("Esplanada",V(285,0.8,270),V(0,0.4,27.5),STONE,Enum.Material.Concrete)
  p("PátioRecepção",V(132,0.8,43),V(0,0.4,-127),STONE,Enum.Material.Concrete)
+ p("PasseioVisitantes",V(10,0.8,20),V(0,0.4,-156),STONE,Enum.Material.Concrete)
  p("CaminhoPrincipal",V(21,0.05,150),V(0,0.85,10),Color3.fromRGB(191,194,186),Enum.Material.Concrete,false)
  -- Perímetro contínuo com só os portões controlados e a passagem técnica.
  for _,x in ipairs({-140,140})do
   if x<0 then p("MuralhaOeste",V(2,23,265),V(x,12.3,27.5),WHITE,Enum.Material.Concrete)
   else
-   p("MuralhaLesteSul",V(2,23,219),V(x,12.3,4.5),WHITE,Enum.Material.Concrete)
-   p("MuralhaLesteNorte",V(2,23,34),V(x,12.3,143),WHITE,Enum.Material.Concrete)
-   p("VergaPassagem",V(2,14,12),V(x,16.8,120),WHITE,Enum.Material.Concrete)
+   p("MuralhaLesteSul",V(2,23,216),V(x,12.3,3),WHITE,Enum.Material.Concrete)
+   p("MuralhaLesteNorte",V(2,23,31),V(x,12.3,144.5),WHITE,Enum.Material.Concrete)
+   p("VergaPassagem",V(2,14,18),V(x,16.8,120),WHITE,Enum.Material.Concrete)
   end
   p("FaixaMuralha",V(2.12,3,265),V(x,17,27.5),BLUE,nil,false)
  end
@@ -378,10 +387,10 @@ function PrisonBuilder.build(parent)
   patrol:SetAttribute("PatrolId",tostring(i));table.insert(police.patrolPrompts,patrol)
  end
  -- Passagem de manutenção: fechada no muro até a primeira ação validada do preso.
- p("PassagemPiso",V(82,0.8,12),V(149,0.4,120),STONE,Enum.Material.Concrete)
- for _,z in ipairs({114,126})do p("PassagemParede",V(82,9,0.7),V(149,5.3,z),STONE,Enum.Material.Concrete)end
- p("PassagemTeto",V(83,0.6,13),V(149,10.1,120),ORANGE)
- local hatch=door(m,base,"EscapeMaintenanceDoor",V(140,5.3,120),V(0.7,9,11.2),V(0,0,12),nil,"MANUTENÇÃO")
+ p("PassagemPiso",V(82,0.8,20),V(149,0.4,120),STONE,Enum.Material.Concrete)
+ for _,z in ipairs({110,130})do p("PassagemParede",V(82,9,0.7),V(149,5.3,z),STONE,Enum.Material.Concrete)end
+ p("PassagemTeto",V(83,0.6,21),V(149,10.1,120),STONE)
+ local hatch=door(m,base,"EscapeMaintenanceDoor",V(140,5.3,120),V(0.7,9,17.2),V(0,0,20),nil,"MANUTENÇÃO")
  sites.escapeDoors[1]=hatch
  sites.escapeSteps={
   prompt(m,base,"EscapeHatch",V(115,3.5,119),"Abrir passagem","1/3 • Painel de manutenção",nil,2),
@@ -390,21 +399,55 @@ function PrisonBuilder.build(parent)
  }
  for _,q in ipairs(sites.escapeSteps)do q.Enabled=false end
  for _,x in ipairs({120,150,179})do lamp(m,base,V(x,9.65,120))end
- sign(m,base,"MANUTENÇÃO →",V(101,6,110),V(27,3,0.3),ORANGE)
- -- Saída junto à conveniência, sem deixar o detento cair no vazio.
- local fuel=model(parent,"Parada da Serra");local fb2=base*CFrame.new(207,0,78)
- fuel:SetAttribute("PlaceName","Parada da Serra");fuel:SetAttribute("MapLabel","Posto / Conveniência");fuel:SetAttribute("Kind","Fuel");fuel:SetAttribute("MapPosition",fb2.Position)
- part(fuel,fb2,"PátioPosto",V(78,0.8,66),V(0,0.4,0),STONE,Enum.Material.Concrete)
- part(fuel,fb2,"Conveniência",V(46,12,18),V(0,6.8,-22),WHITE)
- sign(fuel,fb2,"PARADA DA SERRA\nCONVENIÊNCIA",V(0,10,-31.2),V(41,3,0.3))
- for _,x in ipairs({-13,13})do
-  part(fuel,fb2,"BombaCenográfica",V(4,5,3),V(x,3.3,7),BLUE)
-  part(fuel,fb2,"VisorBomba",V(3,1.5,0.2),V(x,4.3,5.4),DARK,nil,false)
+ sign(m,base,"SERVIÇO",V(101,5,110),V(11,2,0.25),DARK)
+ -- A saída técnica desemboca numa trilha discreta; o posto não revela a fuga.
+ local trail=model(parent,"Trilha da Serra")
+ local trailPoints={base*V(182,0,120),base*V(225,0,120),V(-300,0,-1020),V(-465,0,-880),V(-465,0,-830),V(-458,0,-805)}
+ for i=1,#trailPoints-1 do
+  local a,b=trailPoints[i],trailPoints[i+1]
+  local cf=CFrame.lookAt((a+b)/2,b)
+  local floor=part(trail,cf,"TrilhaPedestre",V(10,0.2,(b-a).Magnitude+1),V(0,0.12,0),Color3.fromRGB(149,143,124),Enum.Material.Ground)
+  floor:SetAttribute("PedestrianOnly",true)
+  for _,side in ipairs({-1,1})do
+   local shrub=part(trail,cf,"VegetaçãoDiscreta",V(4,2.5,5),V(side*9,1.2,0),GREEN,Enum.Material.Grass,false)
+   shrub.Shape=Enum.PartType.Ball
+  end
  end
- part(fuel,fb2,"CoberturaPosto",V(64,0.7,29),V(0,12,7),BLUE)
- p("RetornoExterior",V(18,0.4,260),V(250,0.2,-2),Color3.fromRGB(64,70,76),Enum.Material.Asphalt)
- p("RetornoCidade",V(250,0.4,18),V(125,0.2,-132),Color3.fromRGB(64,70,76),Enum.Material.Asphalt)
- p("CaminhoPósFuga",V(15,0.5,33),V(191,0.25,120),STONE,Enum.Material.Concrete)
+ -- Conveniência afastada, acesso rodoviário próprio e garagem de veículo pessoal.
+ local fuel=model(parent,Config.Fuel.Name);local fb2=Config.Fuel.CFrame
+ fuel:SetAttribute("PlaceName",Config.Fuel.Name);fuel:SetAttribute("MapLabel","Posto / Conveniência");fuel:SetAttribute("Kind","Fuel");fuel:SetAttribute("MapPosition",fb2.Position)
+ part(fuel,fb2,"PátioPosto",V(110,0.8,100),V(0,0.4,0),STONE,Enum.Material.Concrete)
+ part(fuel,fb2,"PisoConveniência",V(46,0.3,20),V(0,0.95,22),WHITE)
+ part(fuel,fb2,"FundosConveniência",V(46,12,1),V(0,6.8,32),WHITE)
+ for _,x in ipairs({-23,23})do part(fuel,fb2,"LateralConveniência",V(1,12,20),V(x,6.8,22),WHITE)end
+ for _,side in ipairs({-1,1})do part(fuel,fb2,"FrenteConveniência",V(18,12,1),V(side*14,6.8,12),WHITE)end
+ part(fuel,fb2,"VergaConveniência",V(10,3,1),V(0,11.3,12),BLUE)
+ part(fuel,fb2,"TetoConveniência",V(48,0.7,22),V(0,13.1,22),BLUE)
+ sign(fuel,fb2,"PARADA DA SERRA\nCONVENIÊNCIA",V(0,10.2,11.3),V(41,3,0.3),BLUE)
+ part(fuel,fb2,"BalcãoConveniência",V(24,3,3),V(0,2.5,26),WOOD)
+ for _,x in ipairs({-14,14})do
+  part(fuel,fb2,"BombaCenográfica",V(4,5,3),V(x,3.3,-1),BLUE)
+  part(fuel,fb2,"VisorBomba",V(3,1.5,0.2),V(x,4.3,-2.6),DARK,nil,false)
+ end
+ part(fuel,fb2,"CoberturaPosto",V(64,0.7,26),V(0,12,-1),BLUE)
+ for _,x in ipairs({-27,27})do part(fuel,fb2,"PilarPosto",V(0.6,11.2,0.6),V(x,6,-1),STONE)end
+ local personal=prompt(fuel,fb2,"GaragemPessoal",V(40,4,8),"Retirar meu carro","Garagem pessoal",nil,0.5)
+ personal:SetAttribute("PersonalGarage",true)
+ local personalSpawns={marker(fuel,fb2,"PersonalVehicleSpawn1",V(-38,0.8,-25)),marker(fuel,fb2,"PersonalVehicleSpawn2",V(38,0.8,-25))}
+ sites.personalGarage={prompt=personal,spawns=personalSpawns,clearance=V(14,7,24)}
+ sites.postEscapeRoute={}
+ for _,point in ipairs(trailPoints)do table.insert(sites.postEscapeRoute,point+V(0,4,0))end
+ -- Uniforme e viatura permanecem vinculados ao trabalho policial, nunca ao posto.
+ local prisonUniform=prompt(armory,ar,"UniformePrisão",V(26,4.5,12),"Retirar uniforme","Vestiário policial",nil,0.5)
+ prisonUniform:SetAttribute("Role","Policial")
+ local prisonVehicle=prompt(m,base,"ViaturaPrisão",V(65,4,-139),"Retirar viatura","Garagem policial",nil,0.5)
+ prisonVehicle:SetAttribute("Role","Policial")
+ part(m,base,"PátioViaturas",V(130,0.7,48),V(115,0.35,-142),STONE,Enum.Material.Concrete)
+ local policeSpawns={}
+ for i,x in ipairs({80,115,150})do
+  policeSpawns[i]=marker(m,base,"PrisonPoliceVehicleSpawn"..i,V(x,0.8,-142))
+ end
+ sites.prisonWorkplace={uniformPrompts={prisonUniform},vehiclePrompts={prisonVehicle},vehicleSpawns=policeSpawns}
  -- Torres fora dos corredores, com acesso pelo pátio.
  for i,pos in ipairs({V(-130,0,-94),V(130,0,-94),V(-130,0,149),V(130,0,149)})do compoundTower(m,base,pos.X,pos.Z,i,police)end
  sites.prisonSpawn=sites.prisonCells[1].spawn

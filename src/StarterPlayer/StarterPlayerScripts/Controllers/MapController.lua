@@ -214,6 +214,7 @@ local function drawCivic(map)
 			local kind = location:GetAttribute("Kind")
 			local color = kind == "Prison" and Color3.fromRGB(178, 103, 45)
 				or kind == "Fuel" and Color3.fromRGB(48, 118, 95)
+				or kind == "Taxi" and Color3.fromRGB(232, 180, 43)
 				or Color3.fromRGB(32, 93, 168)
 			local dot = drawDot(pos, kind == "Fuel" and 8 or 12, color, true, civicMarkerLayer)
 			dot.Name = name

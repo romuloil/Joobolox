@@ -8,7 +8,7 @@
 --   * Carroceria, vidros, luzes, rodas: só visual (não colidem, não pesam), soldados no chassi.
 --   * Rodas e portas presas por Motor6D: o cliente gira as rodas, esterça e abre as portas.
 --   * VehicleSeat do motorista (esquerda) e Seat do carona (direita).
--- Frente do carro = -Z. Modelo atual: esportivo baixo em cunha (inspirado no i8), portas que
+-- Frente do carro = -Z. Há sedãs de serviço e o esportivo pessoal, com portas que
 -- abrem para cima, teto preto "flutuante", detalhes azuis e rodas vermelhas.
 
 local CarBuilder = {}
@@ -56,8 +56,142 @@ local function hinged(chassis, p, pivot, motorName)
 	return motor
 end
 
+local function surfaceText(target, value, face, color, size)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name, gui.Face, gui.LightInfluence = "Identificação", face or Enum.NormalId.Front, 0
+	gui.SizingMode, gui.PixelsPerStud = Enum.SurfaceGuiSizingMode.PixelsPerStud, 40
+	gui.Parent = target
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency, label.Size = 1, UDim2.fromScale(1, 1)
+	label.Text, label.TextScaled, label.TextWrapped = value, true, true
+	label.Font, label.TextColor3 = Enum.Font.GothamBold, color or Color3.new(1, 1, 1)
+	label.Parent = gui
+end
+
+-- Sedã original de quatro portas: cabine alta e vazia, duas vagas utilizáveis,
+-- banco traseiro visual e identificação própria da empresa/serviço.
+local function buildSedan(spec, cf)
+	local car = Instance.new("Model"); car.Name = spec.Name
+	local V = Vector3.new
+	local L, W, r, g = spec.Length, spec.Width, spec.WheelRadius, -spec.Hover
+	local front, back = -L / 2, L / 2
+	local dark, metal = spec.TrimColor, spec.RimColor
+	local chassis = part(car, { Name = "Chassis", Size = V(W - 0.4, 2.4, L - 0.6), CFrame = cf, Transparency = 1 })
+	chassis.CanCollide, chassis.CanQuery, chassis.Massless = true, true, false
+	chassis.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0, 0, 100, 1)
+	car.PrimaryPart = chassis
+	local function at(x, y, z) return cf * CFrame.new(x, y, z) end
+	local function body(name, size, x, y, z, color, extra, parent, base)
+		extra = extra or {}
+		local p = part(parent or car, { Name = name, Size = size, CFrame = at(x, y, z) * (extra.rot or CFrame.new()),
+			Color = color, Material = extra.Material, Transparency = extra.Transparency, Shape = extra.Shape,
+			ClassName = extra.ClassName, Reflectance = extra.Reflectance })
+		weld(base or chassis, p); return p
+	end
+	local paint = { Reflectance = spec.Reflectance }
+	body("Soleira", V(W - 0.6, 0.7, L - 1), 0, g + 1.35, 0, dark)
+	body("Carroceria", V(W - 0.7, 1.8, L - 1), 0, g + 2.6, 0, spec.BodyColor, paint)
+	body("Capô", V(W - 0.8, 0.55, 4.3), 0, g + 3.65, front + 2.7, spec.BodyColor, paint)
+	body("PortaMalas", V(W - 0.8, 0.55, 3.1), 0, g + 3.7, back - 2, spec.BodyColor, paint)
+	body("Teto", V(W - 1.1, 0.35, 8.6), 0, g + 7.1, 0.55, spec.BodyColor, paint)
+	body("ParaBrisa", V(W - 1.3, 2.7, 0.16), 0, g + 5.5, -3.9, spec.GlassColor,
+		{ Material = Enum.Material.Glass, Transparency = 0.42, rot = CFrame.Angles(math.rad(-17), 0, 0) })
+	body("VidroTraseiro", V(W - 1.3, 2.5, 0.16), 0, g + 5.4, 4.85, spec.GlassColor,
+		{ Material = Enum.Material.Glass, Transparency = 0.42, rot = CFrame.Angles(math.rad(18), 0, 0) })
+	for _, side in ipairs({ -1, 1 }) do
+		for _, z in ipairs({ -3.9, 0.55, 4.85 }) do
+			body("Coluna", V(0.35, 3.15, 0.35), side * (W / 2 - 0.6), g + 5.4, z, dark)
+		end
+		body("Retrovisor", V(0.8, 0.5, 0.8), side * (W / 2 + 0.05), g + 4.7, -3.2, dark)
+		for index, z in ipairs({ -1.7, 2.6 }) do
+			local isFront = index == 1
+			local name = (isFront and "Door" or "RearDoor") .. (side < 0 and "Left" or "Right")
+			local color = spec.Role == "Policial" and Color3.fromRGB(238, 240, 243) or spec.BodyColor
+			local leaf = part(car, { Name = name, Size = V(0.2, 2.0, 3.85), CFrame = at(side * (W / 2 - 0.2), g + 3.2, z), Color = color })
+			body("VidroPorta", V(0.12, 2.0, 3.55), side * (W / 2 - 0.55), g + 5.3, z, spec.GlassColor,
+				{ Material = Enum.Material.Glass, Transparency = 0.42 }, leaf, leaf)
+			body("Maçaneta", V(0.1, 0.15, 0.8), side * (W / 2 - 0.05), g + 3.9, z + 1.1, metal, nil, leaf, leaf)
+			local hinge = hinged(chassis, leaf, V(side * (W / 2 - 0.25), g + 3.2, z - 1.8), "DoorMotor")
+			hinge:SetAttribute("Side", side)
+			if isFront then
+				surfaceText(leaf, spec.Role == "Taxista" and "LXR TÁXIS" or "POLÍCIA", side < 0 and Enum.NormalId.Left or Enum.NormalId.Right,
+					spec.Role == "Taxista" and Color3.fromRGB(26, 70, 139) or Color3.fromRGB(24, 66, 115))
+			end
+		end
+		if spec.Role == "Taxista" then
+			for i = 1, 16 do
+				for row = 0, 1 do
+					if (i + row) % 2 == 0 then body("XadrezLXR", V(0.08, 0.35, 0.65), side * (W / 2 - 0.04), g + 2.5 + row * 0.35, -5.5 + i * 0.65, dark) end
+				end
+			end
+		else
+			body("FaixaPolicial", V(0.1, 0.4, L - 3), side * (W / 2 - 0.05), g + 2.5, 0.4, Color3.fromRGB(37, 105, 175))
+		end
+		body("Farol", V(2.1, 0.8, 0.25), side * 2.1, g + 3.1, front + 0.4, Color3.fromRGB(235, 247, 255), { Material = Enum.Material.Neon })
+		body("Lanterna", V(2.1, 0.7, 0.2), side * 2.1, g + 3.2, back - 0.4, Color3.fromRGB(211, 40, 44), { Material = Enum.Material.Neon })
+	end
+	body("Grade", V(2.7, 0.9, 0.25), 0, g + 2.9, front + 0.25, dark)
+	for _, z in ipairs({ front + 0.2, back - 0.2 }) do body("ParaChoque", V(W - 0.3, 0.55, 0.5), 0, g + 1.9, z, dark) end
+	local plate = body("Placa", V(2, 0.6, 0.1), 0, g + 2.5, back - 0.08, Color3.fromRGB(240, 241, 234))
+	surfaceText(plate, spec.Role == "Taxista" and "LXR • CIDADE" or "KINDER • 01", Enum.NormalId.Back, Color3.fromRGB(32, 42, 52))
+	body("Painel", V(W - 1.6, 0.65, 1), 0, g + 3.3, -3.1, dark)
+	body("Volante", V(0.2, 1.0, 1.0), -1.6, g + 3.3, -2.55, dark, { Shape = Enum.PartType.Cylinder, rot = CFrame.Angles(0, math.pi / 2, 0) })
+	local seatY = g + 1.2
+	local driver = part(car, { ClassName = "VehicleSeat", Name = "DriverSeat", Size = V(1.9, 0.4, 1.8), CFrame = at(-1.65, seatY, -0.9), Color = spec.SeatColor })
+	driver.CanTouch, driver.MaxSpeed, driver.Torque, driver.HeadsUpDisplay = false, 0, 0, false
+	driver:SetAttribute("CarSeat", true); weld(chassis, driver)
+	local passenger = part(car, { ClassName = "Seat", Name = "PassengerSeat", Size = V(1.9, 0.4, 1.8), CFrame = at(1.65, seatY, -0.9), Color = spec.SeatColor })
+	weld(chassis, passenger)
+	for _, x in ipairs({ -1.65, 1.65 }) do body("Encosto", V(1.9, 2.4, 0.45), x, seatY + 1.3, 0.15, spec.SeatColor) end
+	body("BancoTraseiro", V(W - 2, 0.55, 2.1), 0, seatY + 0.05, 2.55, spec.SeatColor)
+	body("EncostoTraseiro", V(W - 2, 2.5, 0.5), 0, seatY + 1.25, 3.65, spec.SeatColor)
+	if spec.Role == "Taxista" then
+		local sign = body("LetreiroTaxi", V(3.3, 0.9, 1.4), 0, g + 7.8, 0.2, Color3.fromRGB(255, 221, 88))
+		surfaceText(sign, "TÁXI", Enum.NormalId.Front, Color3.fromRGB(25, 62, 104))
+		surfaceText(sign, "TÁXI", Enum.NormalId.Back, Color3.fromRGB(25, 62, 104))
+	else
+		body("BaseGiroflex", V(4.8, 0.25, 1.3), 0, g + 7.5, 0.2, dark)
+		for _, side in ipairs({ -1, 1 }) do
+			local light = body(side < 0 and "PoliceRed" or "PoliceBlue", V(2.1, 0.65, 1.1), side * 1.15, g + 7.9, 0.2,
+				side < 0 and Color3.fromRGB(224, 42, 54) or Color3.fromRGB(43, 123, 246), { Material = Enum.Material.Neon })
+			local glow = Instance.new("PointLight"); glow.Name, glow.Range, glow.Brightness, glow.Shadows = "Flasher", 14, 0.6, false
+			glow.Color, glow.Parent = light.Color, light
+		end
+		local badge = body("EmblemaPolicial", V(1.2, 0.1, 1.3), 0, g + 3.98, front + 2.8, Color3.fromRGB(235, 190, 68))
+		surfaceText(badge, "★", Enum.NormalId.Top, Color3.fromRGB(32, 70, 120))
+	end
+	for _, wz in ipairs({ front + 3.3, back - 3.3 }) do
+		for _, side in ipairs({ -1, 1 }) do
+			local name = (wz < 0 and "Front" or "Rear") .. (side < 0 and "Left" or "Right")
+			local center = V(side * (W / 2 - 0.3), g + r, wz)
+			local hub = part(car, { Name = name, Size = V(0.4, 0.4, 0.4), CFrame = at(center.X, center.Y, center.Z), Transparency = 1 })
+			local motor = Instance.new("Motor6D"); motor.Name, motor.Part0, motor.Part1, motor.C0, motor.Parent = "WheelMotor", chassis, hub, CFrame.new(center), hub
+			local function rim(name2, size, offset, color)
+				local p = part(car, { Name = name2, Size = size, CFrame = hub.CFrame * offset, Color = color, Shape = Enum.PartType.Cylinder })
+				weld(hub, p); return p
+			end
+			rim("Pneu", V(1.1, r * 2, r * 2), CFrame.new(), Color3.fromRGB(21, 23, 27))
+			rim("Roda", V(1.15, r * 1.5, r * 1.5), CFrame.new(), metal)
+			rim("CentroRoda", V(1.22, r * 0.6, r * 0.6), CFrame.new(), dark)
+			for k = 0, 5 do
+				local spoke = part(car, { Name = "Raio", Size = V(1.21, r * 0.75, 0.18), CFrame = hub.CFrame * CFrame.Angles(k * math.pi / 3, 0, 0) * CFrame.new(0, r * 0.3, 0), Color = dark })
+				weld(hub, spoke)
+			end
+		end
+	end
+	local attachment = Instance.new("Attachment"); attachment.Name, attachment.Parent = "DriveAttachment", chassis
+	local lv = Instance.new("LinearVelocity"); lv.Name, lv.Attachment0, lv.RelativeTo = "Drive", attachment, Enum.ActuatorRelativeTo.World
+	lv.VelocityConstraintMode, lv.MaxForce, lv.VectorVelocity, lv.Parent = Enum.VelocityConstraintMode.Vector, 1e6, V(0, 0, 0), chassis
+	local ao = Instance.new("AlignOrientation"); ao.Name, ao.Mode, ao.Attachment0 = "Upright", Enum.OrientationAlignmentMode.OneAttachment, attachment
+	ao.MaxTorque, ao.Responsiveness, ao.CFrame, ao.Parent = 1e6, 30, cf.Rotation, chassis
+	for _, p in ipairs(car:GetDescendants()) do if p:IsA("BasePart") then p.CollisionGroup = "Veiculos" end end
+	car:SetAttribute("Spec", spec.Name); car:SetAttribute("DoorStyle", "Sedan")
+	return car, driver, passenger
+end
+
 -- cf = posição e direção do centro do chassi no mundo
 function CarBuilder.build(spec, cf)
+	if spec.Style == "Sedan" then return buildSedan(spec, cf) end
 	local car = Instance.new("Model")
 	car.Name = spec.Name
 	local L, W = spec.Length, spec.Width

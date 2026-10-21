@@ -1,0 +1,20 @@
+local R=require('../src/ReplicatedStorage/Shared/WorkRoleRules')
+local n=0;local function check(value,name)n+=1;assert(value,name)end
+for _,role in ipairs({'Policial','Taxista','Pizzaiolo','Atendente','Entregador'})do
+ check(R.validRole(role),'supported role')
+ check(R.canAssign(nil,role,true,false),'available role assignment')
+ check(R.canEquip(role,role,11,true,false,false),'uniform exact workplace boundary')
+ check(not R.canEquip(role,role,11.01,true,false,false),'uniform offsite rejected')
+ check(not R.canEquip(role,role,0,true,true,false),'detained equip rejected')
+ check(not R.canEquip(role,role,0,true,false,true),'stunned equip rejected')
+end
+check(not R.canAssign('Policial','Taxista',true,false),'one job at a time')
+check(R.canAssign('Taxista','Taxista',true,false),'idempotent assignment')
+check(not R.canAssign(nil,'Admin',true,false),'unknown role rejected')
+check(not R.canAssign(nil,'Taxista',false,false),'dead assignment rejected')
+check(not R.canEquip(nil,'Policial',0,true,false,false),'unemployed has no uniform')
+check(not R.canEquip('Policial','Taxista',0,true,false,false),'other uniform denied')
+check(not R.canEquip('Taxista','Taxista',0/0,true,false,false),'invalid distance rejected')
+check(not R.canEquip('Taxista','Taxista',math.huge,true,false,false),'infinite distance rejected')
+check(not R.finitePoint({X=0,Y=1,Z=0/0}),'invalid physics sample rejected')
+print('PASS WorkRoleRules: '..n..' checks')
