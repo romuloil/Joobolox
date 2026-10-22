@@ -7,7 +7,7 @@ WorkRoleConfig.UniformCooldown = 0.75
 WorkRoleConfig.Roles = {
 	Policial = {
 		name = "Policial", style = "Police", label = "LLK",
-		shirt = Color3.fromRGB(29, 64, 111), pants = Color3.fromRGB(23, 42, 71),
+		shirt = Color3.fromRGB(35, 113, 153), pants = Color3.fromRGB(28, 31, 35),
 		cap = Color3.fromRGB(24, 55, 101), trim = Color3.fromRGB(235, 193, 71),
 	},
 	Taxista = {

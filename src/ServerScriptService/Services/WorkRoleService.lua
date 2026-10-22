@@ -14,6 +14,12 @@ local roles, uniforms, listeners = {}, {}, {}
 local watched = {}
 local workplaces, uiUpdate
 local initialized = false
+local layeredTypes = {
+	[Enum.AccessoryType.TShirt] = true, [Enum.AccessoryType.Shirt] = true,
+	[Enum.AccessoryType.Sweater] = true, [Enum.AccessoryType.Jacket] = true,
+	[Enum.AccessoryType.Pants] = true, [Enum.AccessoryType.Shorts] = true,
+	[Enum.AccessoryType.DressSkirt] = true,
+}
 
 local function notice(player, message)
 	if uiUpdate and player.Parent == Players then
@@ -116,18 +122,33 @@ local function preserveClothing(lease, object)
 	elseif object:IsA("Pants") then property = "PantsTemplate"
 	elseif object:IsA("ShirtGraphic") then property = "Graphic" end
 	if property and not lease.clothing[object] then
-		lease.clothing[object] = { property = property, value = object[property] }
+		local saved = { property = property, value = object[property] }
+		lease.clothing[object] = saved
 		object[property] = ""
+		table.insert(lease.connections, object:GetPropertyChangedSignal(property):Connect(function()
+			if object[property] ~= "" then
+				saved.value = object[property]
+				object[property] = ""
+			end
+		end))
 	end
-	-- O boné é original do emprego. Só os chapéus/cabelos são ocultados; os
-	-- acessórios continuam no personagem e voltam exatamente como estavam.
+	-- A roupa em camadas também é ocultada para não cobrir o uniforme.
+	-- Objetos e valores são preservados, inclusive carregamentos tardios do avatar.
 	local accessory = object:IsA("Accessory") and object or object:FindFirstAncestorOfClass("Accessory")
 	if not accessory then return end
-	if accessory.AccessoryType ~= Enum.AccessoryType.Hat and accessory.AccessoryType ~= Enum.AccessoryType.Hair then return end
-	local handle = accessory:FindFirstChild("Handle")
-	if handle and handle:IsA("BasePart") and lease.hats[handle] == nil then
-		lease.hats[handle] = handle.Transparency
-		handle.Transparency = 1
+	if accessory.AccessoryType ~= Enum.AccessoryType.Hat and accessory.AccessoryType ~= Enum.AccessoryType.Hair
+		and not layeredTypes[accessory.AccessoryType] then return end
+	for _, handle in ipairs(accessory:GetDescendants()) do
+		if handle:IsA("BasePart") and lease.hats[handle] == nil then
+			lease.hats[handle] = handle.Transparency
+			handle.Transparency = 1
+			table.insert(lease.connections, handle:GetPropertyChangedSignal("Transparency"):Connect(function()
+				if handle.Transparency ~= 1 then
+					lease.hats[handle] = handle.Transparency
+					handle.Transparency = 1
+				end
+			end))
+		end
 	end
 end
 
@@ -191,6 +212,18 @@ local function buildUniform(lease, character, definition)
 	piece(lease, torso, "CintoUniforme", Vector3.new(torso.Size.X + 0.14, torso.Size.Y * 0.12, torso.Size.Z + 0.17),
 		CFrame.new(0, -torso.Size.Y * 0.38, 0), dark, nil, Enum.Material.SmoothPlastic)
 	if definition.style == "Police" then
+		piece(lease, torso, "GravataPolicial", Vector3.new(torso.Size.X * 0.13, torso.Size.Y * 0.64, 0.06),
+			CFrame.new(0, torso.Size.Y * 0.06, front - 0.03), dark)
+		piece(lease, torso, "NóGravataPolicial", Vector3.new(torso.Size.X * 0.18, torso.Size.Y * 0.14, 0.075),
+			CFrame.new(0, torso.Size.Y * 0.38, front - 0.045), dark)
+		for _, side in ipairs({-1, 1}) do
+			piece(lease, torso, "BolsoCamisaPolicial", Vector3.new(torso.Size.X * 0.26, torso.Size.Y * 0.28, 0.055),
+				CFrame.new(side * torso.Size.X * 0.3, -torso.Size.Y * 0.06, front), definition.cap)
+			piece(lease, torso, "GolaPolicial", Vector3.new(torso.Size.X * 0.25, torso.Size.Y * 0.16, 0.06),
+				CFrame.new(side * torso.Size.X * 0.15, torso.Size.Y * 0.38, front) * CFrame.Angles(0, 0, side * math.rad(24)), definition.shirt)
+		end
+		piece(lease, torso, "FivelaPolicial", Vector3.new(0.3, torso.Size.Y * 0.13, 0.07),
+			CFrame.new(0, -torso.Size.Y * 0.38, front - 0.015), definition.trim, nil, Enum.Material.Metal)
 		local badge = piece(lease, torso, "DistintivoPolicial", Vector3.new(0.3, 0.4, 0.08),
 			CFrame.new(-torso.Size.X * 0.25, torso.Size.Y * 0.2, front - 0.02), definition.trim, nil, Enum.Material.Metal)
 		emblem(badge, "★", Color3.fromRGB(52, 68, 90))

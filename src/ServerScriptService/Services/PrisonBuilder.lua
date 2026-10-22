@@ -12,6 +12,9 @@ local ORANGE = Color3.fromRGB(233, 151, 74)
 local STONE = Color3.fromRGB(165, 174, 172)
 local WOOD = Color3.fromRGB(149, 112, 75)
 local GREEN = Color3.fromRGB(102, 143, 95)
+local NAVY = Color3.fromRGB(21, 43, 79)
+local CYAN = Color3.fromRGB(42, 174, 229)
+local RED = Color3.fromRGB(175, 61, 78)
 
 local function model(parent, name)
  local m = Instance.new("Model"); m.Name = name; m.Parent = parent; return m
@@ -149,17 +152,120 @@ local function compoundTower(parent,base,x,z,index,police)
  lamp(m,b,V(0,37.3,0));return m
 end
 
+-- Cada estação declara sua finalidade; somente PrisonActivityService decide
+-- quem pode usá-la, controla o intervalo e concede o efeito.
+local function activity(sites,parent,base,id,kind,pos,action,object,hold)
+ local q=prompt(parent,base,id,pos,action,object,nil,hold or 1)
+ q:SetAttribute("PrisonActivityId",id);q:SetAttribute("PrisonActivityKind",kind)
+ q.Enabled=false
+ table.insert(sites.prisonActivities.stations,{id=id,kind=kind,prompt=q,approach=base*pos})
+ return q
+end
+
+local function headquarters(parent,base,admin,sites)
+ -- Três pavimentos vazados. O antigo cilindro maciço foi substituído por
+ -- salas, pisos com abertura e três escadas de dois lances até o heliponto.
+ admin:FindFirstChild("Cobertura"):Destroy()
+ local stairRoutes={}
+ local floorTops={1.1,17.5,33.9,50.3}
+ for level=1,3 do
+  local top=floorTops[level+1]
+  local y=top-0.2
+  part(admin,base,"PisoSuperiorDireito",V(86,0.4,40),V(13,y,-125),WHITE)
+  part(admin,base,"PisoSuperiorEsquerdo",V(2,0.4,40),V(-55,y,-125),WHITE)
+  part(admin,base,"Patamar",V(24,0.4,4),V(-42,y,-143.5),WHITE)
+  part(admin,base,"PisoSuperiorFundos",V(24,0.4,18),V(-42,y,-114),WHITE)
+  local route={base*V(-37,floorTops[level]+3,-143.5),base*V(-47,floorTops[level]+3,-143.5)}
+  local rise=16.4/28
+  for i=1,28 do
+   local outward=i<=14
+   local index=outward and i-1 or i-15
+   local x=outward and -47 or -37
+   local z=outward and (-141+index) or (-128-index)
+   local stepTop=floorTops[level]+i*rise
+   part(admin,base,"Degrau",V(7,0.3,1.15),V(x,stepTop-0.15,z),STONE,Enum.Material.Concrete)
+   if i==14 then
+    part(admin,base,"Patamar",V(17,0.3,3),V(-42,stepTop-0.15,-126.9),STONE)
+   end
+   table.insert(route,base*V(x,stepTop+3,z))
+  end
+  table.insert(route,base*V(-37,top+3,-143.5))
+  table.insert(route,base*V(-25,top+3,-143.5))
+  stairRoutes[level]=route
+  -- Corrimãos ficam nas bordas, deixando o vão central e os patamares livres.
+  for _,x in ipairs({-52.5,-30.5})do
+   part(admin,base,"GuardaEscadaSuperior",V(0.25,2.7,20),V(x,top+1.35,-132),NAVY)
+  end
+  if level<3 then
+   local wallY=top+8
+   for _,x in ipairs({-56,56})do part(admin,base,"ParedeSuperiorLateral",V(1,16,40),V(x,wallY,-125),NAVY)end
+   for _,z in ipairs({-145,-105})do
+    part(admin,base,"PeitorilSuperior",V(112,3,0.8),V(0,top+1.5,z),NAVY)
+    part(admin,base,"VigaSuperior",V(112,3,0.8),V(0,top+14.5,z),WHITE)
+    local glass=part(admin,base,"VidraçaSuperior",V(111,10,0.3),V(0,top+8,z),Color3.fromRGB(100,194,225),Enum.Material.Glass)
+    glass.Transparency=0.35
+    for x=-48,48,16 do part(admin,base,"MontanteSuperior",V(0.5,10,0.6),V(x,top+8,z),WHITE)end
+    part(admin,base,"FaixaCianoSuperior",V(113,0.8,0.3),V(0,top+2.1,z+(z< -125 and -0.5 or 0.5)),CYAN,nil,false)
+   end
+   lamp(admin,base,V(12,top+15.8,-125),V(22,0.2,1.4))
+   lamp(admin,base,V(-42,top+15.8,-126),V(7,0.2,1.4))
+   local room=model(admin,level==1 and "Sala de Operações" or "Comando e Reuniões")
+   local deskZ=level==1 and -112 or -123
+   part(room,base,"MesaOperações",V(38,2.7,6),V(15,top+1.35,deskZ),WHITE)
+   part(room,base,"TampoOperações",V(39,0.3,6.5),V(15,top+2.85,deskZ),NAVY)
+   if level==1 then
+    for _,x in ipairs({0,14,28})do
+     local screen=part(room,base,"TelaSetores",V(10,4.6,0.35),V(x,top+5.3,deskZ+0.8),NAVY)
+     label(screen,x==0 and "CELAS A / B" or x==14 and "PÁTIO / VISITAS" or "GARAGEM / RONDA")
+    end
+    local control=prompt(room,base,"PainelSuperior",V(14,top+4,deskZ-4.2),"Abrir painel","Controle dos setores","Control",0.5)
+    table.insert(sites.police.controlPrompts,control)
+   else
+    for _,x in ipairs({0,14,28})do seat(room,base,V(x,top+1.5,deskZ-6),BLUE)end
+    local q=prompt(room,base,"InformesComando",V(40,top+4,-115),"Registrar ocorrência","Sala de comando","Reports",0.5)
+    table.insert(sites.police.reportPrompts,q)
+    sign(room,base,"COMANDO • PLANEJAMENTO",V(15,top+10,-105.7),V(49,3,0.3),NAVY)
+   end
+   sign(room,base,level==1 and "02 • OPERAÇÕES" or "03 • COMANDO",V(-22,top+5,-144.4),V(15,3,0.25),NAVY)
+  end
+ end
+ -- Cobertura acessível, com guarda-corpo e acesso livre pelo patamar oeste.
+ for _,z in ipairs({-145,-105})do part(admin,base,"ParapeitoCobertura",V(112,3,0.5),V(0,51.8,z),NAVY)end
+ for _,x in ipairs({-56,56})do part(admin,base,"ParapeitoCobertura",V(0.5,3,40),V(x,51.8,-125),NAVY)end
+ local heli=part(admin,base,"Heliponto",V(0.15,31,31),CFrame.new(20,50.38,-125)*CFrame.Angles(0,0,math.pi/2),CYAN,Enum.Material.SmoothPlastic,false)
+ heli.Shape=Enum.PartType.Cylinder;label(heli,"H",Enum.NormalId.Right,WHITE)
+ heli:SetAttribute("HelicopterAvailable",false)
+ sign(admin,base,"POLÍCIA • KINDER",V(8,45.2,-145.7),V(66,5,0.3),NAVY)
+ admin:SetAttribute("AccessibleFloors",3);admin:SetAttribute("RoofAccessible",true)
+ return stairRoutes
+end
+
+local function restrictedZones(base)
+ return {
+  {cf=base*CFrame.new(75,8,-76),half=V(36,8,19)},
+  {cf=base*CFrame.new(38,8,-28),half=V(26,8,17)},
+  {cf=base*CFrame.new(-36,8,-125),half=V(19,8,18)},
+  {cf=base*CFrame.new(0,35,-125),half=V(54,18,18)},
+  {cf=base*CFrame.new(-101,7,-128),half=V(31,7,12)},
+  {cf=base*CFrame.new(115,7,-143),half=V(54,7,20)},
+ }
+end
+
 -- Reúne referências de uma cena já construída sem duplicar nem substituir peças.
 function PrisonBuilder.recover(parent)
  local m=parent.Name==Config.Prison.Name and parent or parent:FindFirstChild(Config.Prison.Name)
- assert(m and m:GetAttribute("ComplexVersion")==2,"Prisão existente precisa da arquitetura Marco 5.2 completa")
+ assert(m and m:GetAttribute("ComplexVersion")==4,"Prisão existente precisa da arquitetura Marco 5.4 completa")
  if cached and cached.model==m then return cached end
  local base=Config.Prison.CFrame
  local police={dutyPrompts={},armoryPrompts={},reportPrompts={},controlPrompts={},patrolPrompts={},doors={}}
- local result={model=m,police=police,prisonCells={},escapeDoors={}}
+ local result={model=m,police=police,prisonCells={},escapeDoors={},prisonActivities={stations={},drawers={},doors={},restrictedZones=restrictedZones(base)}}
  local lookup={Duty="dutyPrompts",Armory="armoryPrompts",Reports="reportPrompts",Control="controlPrompts",Patrol="patrolPrompts"}
  for _,object in ipairs(m:GetDescendants())do
   if object:IsA("ProximityPrompt")then
+   local activityId,activityKind=object:GetAttribute("PrisonActivityId"),object:GetAttribute("PrisonActivityKind")
+   if activityId and activityKind then table.insert(result.prisonActivities.stations,{id=activityId,kind=activityKind,prompt=object})end
+   local drawer=object:GetAttribute("PrisonDrawerId")
+   if drawer then table.insert(result.prisonActivities.drawers,{id=drawer,prompt=object})end
    local action=object:GetAttribute("PoliceAction")
    if lookup[action]then table.insert(police[lookup[action]],object)
    elseif action=="Training"then police.trainingPrompt=object
@@ -167,12 +273,13 @@ function PrisonBuilder.recover(parent)
   elseif object:IsA("BasePart")then
    local id=object:GetAttribute("DoorId")
    if id and not object:GetAttribute("CellId")then
-    local entry={id=id,part=object,closed=object:GetAttribute("DoorClosed"),open=object:GetAttribute("DoorOpen"),restricted=true,name=id}
+    local entry={id=id,part=object,closed=object:GetAttribute("DoorClosed"),open=object:GetAttribute("DoorOpen"),restricted=true,name=id,keycard=object:GetAttribute("KeycardAccess")==true}
     if id=="EscapeMaintenanceDoor"then result.escapeDoors[1]=entry
     else
      local terminal=m:FindFirstChild(id.."Control",true)
      entry.prompt=terminal and terminal:FindFirstChildOfClass("ProximityPrompt")
      assert(entry.prompt,"Terminal de porta ausente: "..id);table.insert(police.doors,entry)
+     if entry.keycard then table.insert(result.prisonActivities.doors,entry)end
     end
    end
   end
@@ -215,9 +322,9 @@ function PrisonBuilder.build(parent)
  if parent:FindFirstChild(Config.Prison.Name)then return PrisonBuilder.recover(parent)end
  local base=Config.Prison.CFrame
  local m=model(parent,Config.Prison.Name)
- m:SetAttribute("PlaceName",Config.Prison.Name);m:SetAttribute("MapLabel","Prisão");m:SetAttribute("Kind","Prison");m:SetAttribute("MapPosition",base.Position);m:SetAttribute("ComplexVersion",2)
+ m:SetAttribute("PlaceName",Config.Prison.Name);m:SetAttribute("MapLabel","Prisão");m:SetAttribute("Kind","Prison");m:SetAttribute("MapPosition",base.Position);m:SetAttribute("ComplexVersion",4)
  local police={dutyPrompts={},armoryPrompts={},reportPrompts={},controlPrompts={},patrolPrompts={},doors={}}
- local sites={police=police,prisonCells={},escapeDoors={}}
+ local sites={police=police,prisonCells={},escapeDoors={},prisonActivities={stations={},drawers={},doors={},restrictedZones=restrictedZones(base)}}
  local p=function(name,size,pos,color,material,collide)return part(m,base,name,size,pos,color,material,collide)end
  p("Esplanada",V(285,0.8,270),V(0,0.4,27.5),STONE,Enum.Material.Concrete)
  p("PátioRecepção",V(132,0.8,43),V(0,0.4,-127),STONE,Enum.Material.Concrete)
@@ -258,7 +365,10 @@ function PrisonBuilder.build(parent)
  admin:FindFirstChild("ParedeFundos"):Destroy()
  for _,side in ipairs({-1,1})do part(admin,ab,"ParedeFundos",V(46,16,1),V(side*33,8.8,20),WHITE)end
  part(admin,ab,"VergaAcessoSeguro",V(20,4,1),V(0,14.8,20),WHITE)
- p("ParedesSaguão",V(1,12,39),V(-16,6.8,-125),WHITE)
+ p("ParedesSaguãoFrente",V(1,12,2),V(-16,6.8,-144),WHITE)
+ p("ParedesSaguãoFundos",V(1,12,30),V(-16,6.8,-120),WHITE)
+ p("VergaEscadaHQ",V(1,3,8),V(-16,12.3,-139),WHITE)
+ door(m,base,"PrisonHQStairs",V(-16,5.8,-139),V(0.6,10,8),V(0,0,9.5),police,"OPERAÇÕES / COMANDO")
  p("DivisóriaApoio",V(1,12,39),V(38,6.8,-125),WHITE)
  sign(admin,ab,"RECEPÇÃO E INFORMAÇÕES",V(0,7,19.3),V(28,3,0.3))
  part(admin,ab,"Balcão",V(22,3.3,3),V(0,2.5,12),WOOD)
@@ -285,7 +395,7 @@ function PrisonBuilder.build(parent)
   part(armory,ar,"ArmárioAzul",V(8,9,3),V(x,5.3,16),BLUE,Enum.Material.Metal)
   part(armory,ar,"Alça",V(0.2,1.2,0.15),V(x+2,5.2,14.4),STONE,nil,false)
  end
- local gear=prompt(armory,ar,"RetiradaEquipamento",V(0,4.8,7),"Retirar equipamento","Lançador de água, algemas e rádio","Armory")
+ local gear=prompt(armory,ar,"RetiradaEquipamento",V(0,4.8,7),"Retirar equipamento","Pistola, taser, algemas e acessórios","Armory")
  table.insert(police.armoryPrompts,gear)
  part(armory,ar,"BancadaEquipamentos",V(28,3,5),V(0,2.5,11),WOOD)
  sign(armory,ar,"EQUIPAMENTOS CARTUNESCOS\nUso autorizado em serviço",V(-25,7.5,20.3),V(20,5,0.3))
@@ -301,13 +411,7 @@ function PrisonBuilder.build(parent)
  end
  local q=prompt(control,cb,"PainelControle",V(0,4,4),"Abrir painel","Portões e emergência","Control")
  table.insert(police.controlPrompts,q)
- -- Volume superior octagonal e heliponto decorativo como a referência.
- local hub=p("VolumeSuperior",V(15,36,36),CFrame.new(0,25.2,-125)*CFrame.Angles(0,0,math.pi/2),WHITE,Enum.Material.Concrete)
- hub.Shape=Enum.PartType.Cylinder
- local band=p("FaixaSuperior",V(4,36.3,36.3),CFrame.new(0,25.2,-125)*CFrame.Angles(0,0,math.pi/2),BLUE)
- band.Shape=Enum.PartType.Cylinder
- local heli=p("HelipontoCenográfico",V(0.7,47,47),CFrame.new(0,33.1,-125)*CFrame.Angles(0,0,math.pi/2),DARK)
- heli.Shape=Enum.PartType.Cylinder;label(heli,"H",Enum.NormalId.Right,WHITE);heli:SetAttribute("Decorative",true)
+ local headquartersRoutes=headquarters(m,base,admin,sites)
  -- Bloco de celas fechado: duas alas, oito celas individuais em cada lado.
  local wing=model(m,"Bloco de Celas A / B")
  part(wing,base,"PisoAlojamentos",V(92,0.3,146),V(-75,0.95,17),WHITE)
@@ -345,9 +449,23 @@ function PrisonBuilder.build(parent)
    part(cell,base,"Vaso",V(2.3,1.8,2.8),V(outer,1.7,z+5.2),WHITE,Enum.Material.SmoothPlastic)
    part(cell,base,"CaixaDescarga",V(2.3,2.3,1.1),V(outer,2,z+7),WHITE)
    part(cell,base,"Pia",V(3,0.7,1.8),V(cx,3.1,z+7.5),WHITE)
+   part(cell,base,"Torneira",V(0.25,0.9,0.25),V(cx,3.8,z+7.6),STONE,Enum.Material.Metal,false)
+   local drawer=part(cell,base,"GavetaPessoal",V(3.8,1.1,1.8),V(outer,1.7,z+1.6),WOOD)
+   part(cell,base,"PuxadorGaveta",V(1.4,0.15,0.15),V(outer,1.8,z+0.6),STONE,nil,false)
+   local storage=prompt(cell,base,"Gaveta_"..id,V(outer,3.1,z+1.6),"Guardar / retirar cartão","Gaveta pessoal • cela "..id,nil,0.7)
+   storage:SetAttribute("PrisonDrawerId",id);storage.Enabled=false
+   table.insert(sites.prisonActivities.drawers,{id=id,prompt=storage,approach=base*V(cx,4,z+2)})
+   local deskX=row==1 and -96 or -54
+   part(cell,base,"MesaCela",V(5.6,2.4,3),V(deskX,2,z+6.5),WOOD)
+   seat(cell,base,V(deskX,2.1,z+3),BLUE)
+   sign(cell,base,"CELA "..id,V(cx,12,z+8.6),V(9,2,0.2),ORANGE)
    lamp(cell,base,V(cx,17.5,z),V(4,0.15,2))
    table.insert(sites.prisonCells,{id=id,spawn=spawn,door=leaf.part,closed=leaf.closed,open=leaf.open,bounds={cf=base*CFrame.new(cx,9,z),half=V(14,8,8)},enclosure={cf=base*CFrame.new(cx,9,z),half=V(15,8,9)},exitPath={base*V(cx,4,z),base*V(face,4,z),base*V(-75,4,z)}})
   end
+ end
+ for _,z in ipairs({-55.6,89.6})do
+  part(wing,base,"FaixaAlojamentoLaranja",V(90,1.2,0.2),V(-75,11,z),ORANGE,nil,false)
+  part(wing,base,"FaixaAlojamentoLaranja",V(90,0.6,0.2),V(-75,9.3,z),ORANGE,nil,false)
  end
  -- Refeitório e enfermaria dão funções e identidade aos blocos laranja.
  local cafe,fb=shell(m,base,"Refeitório",V(86,0,35),65,50,16,ORANGE,12)
@@ -358,12 +476,21 @@ function PrisonBuilder.build(parent)
  end
  part(cafe,fb,"BalcãoRefeições",V(46,3.5,5),V(0,2.6,18),STONE)
  for _,x in ipairs({-14,0,14})do part(cafe,fb,"Bandeja",V(9,0.3,3),V(x,4.5,18),DARK,nil,false)end
+ for _,x in ipairs({-14,0,14})do
+  part(cafe,fb,"Refeição",V(3,0.45,1.7),V(x,4.85,18),Color3.fromRGB(230,187,92),nil,false)
+  part(cafe,fb,"Copo",V(0.7,1,0.7),V(x+3,5.1,18),WHITE,nil,false)
+ end
+ activity(sites,cafe,base,"RefeicaoPrisional","meal",V(60,4.3,52),"Pegar refeição","Refeitório • refeição e água",1.2)
+ sign(cafe,fb,"REFEIÇÕES / ÁGUA\nAtendimento no balcão",V(-22,8,24.3),V(18,4,0.25),ORANGE)
  local infirm,ib=shell(m,base,"Enfermaria",V(80,0,91),76,40,16,ORANGE,12)
  sign(infirm,ib,"ENFERMARIA",V(0,13,-20.7),V(42,3,0.3))
  for _,x in ipairs({-26,-9,9,26})do
   part(infirm,ib,"Leito",V(8,2,15),V(x,1.9,6),WHITE)
   part(infirm,ib,"ColchãoLeito",V(7.8,0.7,14.7),V(x,3.2,6),Color3.fromRGB(126,178,189),Enum.Material.Fabric)
  end
+ activity(sites,infirm,base,"AtendimentoEnfermaria","medical",V(80,4.5,105),"Receber atendimento","Enfermaria • recuperação",2)
+ part(infirm,ib,"ArmárioMédico",V(5,7,2),V(0,4.3,18),WHITE)
+ sign(infirm,ib,"+",V(0,5,16.8),V(3,3,0.2),RED)
  -- Quadra, área de exercícios e visitantes; cercas densas sem frestas atravessáveis.
  p("Quadra",V(50,0.05,62),V(5,0.86,68),GREEN,Enum.Material.Concrete,false)
  for _,x in ipairs({-20,30})do p("LinhaQuadra",V(0.2,0.1,62),V(x,0.9,68),WHITE,nil,false)end
@@ -375,6 +502,34 @@ function PrisonBuilder.build(parent)
   p("Aro",V(3,0.2,1.8),V(5,8.5,z+(z<68 and 1.2 or -1.2)),ORANGE,nil,false)
  end
  for _,x in ipairs({-10,10})do seat(m,base,V(x,2.3,20),BLUE)end
+ -- Aparelhos de exercício ficam fora do corredor contínuo da rota de fuga.
+ local exercise=model(m,"Pátio de Exercícios")
+ part(exercise,base,"PisoExercícios",V(63,0.08,34),V(-69,0.85,127),Color3.fromRGB(134,153,124),nil,false)
+ for _,x in ipairs({-88,-65})do
+  part(exercise,base,"BaseEsteira",V(6,0.5,11),V(x,1.15,126),NAVY)
+  part(exercise,base,"LonaEsteira",V(4.8,0.1,9),V(x,1.46,126),DARK,nil,false)
+  for _,side in ipairs({-1,1})do part(exercise,base,"ApoioEsteira",V(0.3,3.4,0.3),V(x+side*2.6,3,122),STONE)end
+  part(exercise,base,"PainelEsteira",V(5.5,1.5,0.6),V(x,4.5,121.8),BLUE)
+ end
+ for _,x in ipairs({-49,-40})do part(exercise,base,"ColunaBarra",V(0.4,8,0.4),V(x,4.8,137),STONE,Enum.Material.Metal)end
+ part(exercise,base,"BarraExercício",V(9.4,0.4,0.4),V(-44.5,8.6,137),STONE,Enum.Material.Metal)
+ activity(sites,exercise,base,"ExercicioPatio","exercise",V(-77,4,116),"Fazer exercício","Pátio • circuito de exercícios",2)
+ sign(exercise,base,"PÁTIO • EXERCÍCIOS",V(-67,7,110),V(43,2.4,0.2),ORANGE)
+ -- Visitas têm acesso público próprio, antes da muralha e sem acesso ao arsenal.
+ local visitors,vb=shell(m,base,"Pavilhão de Visitas",V(-101,0,-128),66,28,14,RED,12)
+ sign(visitors,vb,"VISITAS",V(0,11,-14.6),V(43,3,0.3),RED)
+ for _,object in ipairs(visitors:GetChildren())do if object.Name=="FaixaAzul"then object.Color=RED end end
+ part(visitors,vb,"BalcãoVisitas",V(20,3,3),V(0,2.4,5),WHITE)
+ part(visitors,vb,"TampoVisitas",V(21,0.3,3.3),V(0,4.05,5),RED)
+ for _,x in ipairs({-23,23})do
+  seat(visitors,vb,V(x,2.1,0),RED)
+  part(visitors,vb,"MesaVisita",V(9,0.4,3.5),V(x,3.2,5),WHITE)
+  local glass=part(visitors,vb,"DivisóriaVisita",V(9,4,0.2),V(x,5.5,6),Color3.fromRGB(170,210,220),Enum.Material.Glass)
+  glass.Transparency=0.4
+  window(visitors,vb,V(x,7,-14.6),V(12,5,0.2))
+ end
+ activity(sites,visitors,base,"RecepcaoVisitas","visitor",V(-101,4,-127),"Registrar visita","Recepção de visitantes",1)
+ p("PasseioPavilhão",V(12,0.6,15),V(-101,0.3,-150),STONE,Enum.Material.Concrete)
  -- Posto de treinamento: boneco é criado pelo serviço, não uma armadilha para civis.
  police.trainingSpawn=marker(m,base,"TrainingSpawn",V(92,4,-14))
  police.trainingTarget=marker(m,base,"TrainingTarget",V(92,4,8))
@@ -447,11 +602,24 @@ function PrisonBuilder.build(parent)
  for i,x in ipairs({80,115,150})do
   policeSpawns[i]=marker(m,base,"PrisonPoliceVehicleSpawn"..i,V(x,0.8,-142))
  end
+ local garage=model(m,"Garagem Policial")
+ part(garage,base,"CoberturaGaragem",V(112,0.7,43),V(115,15,-143.5),NAVY)
+ part(garage,base,"FaixaGaragem",V(112,1.3,0.3),V(115,13.9,-165.1),CYAN,nil,false)
+ part(garage,base,"FundosGaragem",V(110,14,0.8),V(115,7.8,-122.4),NAVY)
+ for _,x in ipairs({61,97.5,132.5,169})do
+  part(garage,base,"PilarGaragem",V(0.8,14,0.8),V(x,7.8,-161.5),WHITE)
+ end
+ for i,x in ipairs({80,115,150})do
+  sign(garage,base,"POLÍCIA • "..i,V(x,12,-165.2),V(25,2.3,0.25),NAVY)
+  part(garage,base,"LinhaVaga",V(0.2,0.1,24),V(x-12,0.84,-143),WHITE,nil,false)
+  part(garage,base,"LinhaVaga",V(0.2,0.1,24),V(x+12,0.84,-143),WHITE,nil,false)
+  lamp(garage,base,V(x,14.45,-143),V(8,0.2,1.6))
+ end
  sites.prisonWorkplace={uniformPrompts={prisonUniform},vehiclePrompts={prisonVehicle},vehicleSpawns=policeSpawns}
  -- Torres fora dos corredores, com acesso pelo pátio.
  for i,pos in ipairs({V(-130,0,-94),V(130,0,-94),V(-130,0,149),V(130,0,149)})do compoundTower(m,base,pos.X,pos.Z,i,police)end
  sites.prisonSpawn=sites.prisonCells[1].spawn
- sites.prisonRelease=marker(m,base,"PrisonRelease",V(0,4,-150))
+ sites.prisonRelease=marker(m,base,"PrisonRelease",V(0,4,-174))
  sites.prisonBounds={cf=base*CFrame.new(Config.Prison.BoundsCenter),half=Config.Prison.BoundsHalf}
  sites.model=m
  sites.routes={
@@ -467,7 +635,29 @@ function PrisonBuilder.build(parent)
   {name="armaria",points=worldPoints({V(0,4,-100),V(0,4,-80),V(20,4,-80),V(20,4,-102),V(75,4,-102),V(75,4,-88),V(75,4,-71)}),doors=police.doors},
   {name="controle",points=worldPoints({V(0,4,-100),V(0,4,-52),V(38,4,-52),V(38,4,-35),V(38,4,-24)}),doors=police.doors},
   {name="rota de fuga",points=worldPoints({V(-75,4,-46),V(-75,4,-65),V(-20,4,-65),V(-20,4,120),V(115,4,120),V(153,4,120),V(182,4,120)}),doors={sites.escapeDoors[1]}},
+  {name="recepção de visitas",points=worldPoints({V(0,4,-156),V(-101,4,-156),V(-101,4,-127)})},
+  {name="refeitório funcional",points=worldPoints({V(38,4,2),V(86,4,2),V(86,4,18),V(58,4,18),V(58,4,52),V(60,4.3,52)})},
+  {name="enfermaria funcional",points=worldPoints({V(38,4,64),V(80,4,64),V(80,4,105)})},
+  {name="pátio de exercícios",points=worldPoints({V(-20,4,105),V(-77,4,105),V(-77,4,116)})},
+  {name="garagem policial",points=worldPoints({V(0,4,-156),V(65,4,-156),V(65,4,-139)})},
+  {name="acesso escadas comando",points=worldPoints({V(0,4,-140),V(-22,4,-140),V(-26,4,-143.5),V(-37,4.1,-143.5)}),doors=police.doors},
  }
+ for level,points in ipairs(headquartersRoutes)do
+  table.insert(sites.validationRoutes,{name="escadaria comando "..level,points=points,stairs=true,doors=police.doors})
+ end
+ table.insert(sites.validationRoutes,{name="sala de operações",points=worldPoints({V(-25,20.5,-143.5),V(-20,20.5,-130),V(14,20.5,-130),V(14,20.5,-117)})})
+ table.insert(sites.validationRoutes,{name="sala de comando",points=worldPoints({V(-25,36.9,-143.5),V(-20,36.9,-135),V(45,36.9,-135),V(45,36.9,-115),V(40,36.9,-115)})})
+ table.insert(sites.validationRoutes,{name="acesso ao heliponto",points=worldPoints({V(-25,53.3,-143.5),V(-20,53.3,-125),V(20,53.3,-125)})})
+ sites.prisonHeadquarters={floorLevels={1.1,17.5,33.9},roofLevel=50.3,stairRoutes=headquartersRoutes}
+ sites.prisonGarageRoutes={}
+ for _,x in ipairs({80,115,150})do table.insert(sites.prisonGarageRoutes,{name="saída viatura "..x,points=worldPoints({V(x,0.8,-142),V(x,0.8,-170),V(200,0.8,-170)})})end
+ for _,entry in ipairs(police.doors)do
+  if entry.id=="PrisonArmory" or entry.id=="PrisonControl" or entry.id=="PrisonSideAccess" or entry.id=="PrisonHQStairs"then
+   entry.keycard=true;entry.part:SetAttribute("KeycardAccess",true)
+   entry.prompt.ActionText="Usar cartão / abrir"
+   table.insert(sites.prisonActivities.doors,entry)
+  end
+ end
  for index,anchor in ipairs({V(-130,0,-94),V(130,0,-94),V(-130,0,149),V(130,0,149)})do
   local towerBase=base*CFrame.new(anchor)*CFrame.Angles(0,anchor.Z<0 and math.pi or 0,0)
   local points={towerBase*V(0,4,-10),towerBase*V(0,4.4,-4)}
@@ -482,7 +672,7 @@ function PrisonBuilder.build(parent)
   table.insert(points,towerBase*V(-3.2,33.3,0))
   table.insert(sites.validationRoutes,{name="escadaria torre "..index,points=points,doors=police.doors,stairs=true})
  end
- m:SetAttribute("CellCount",#sites.prisonCells);m:SetAttribute("Architecture","WhiteBlueOrange")
+ m:SetAttribute("CellCount",#sites.prisonCells);m:SetAttribute("Architecture","BlueCommandOrangeCellsRedVisitors")
  cached=sites;return sites
 end
 return PrisonBuilder

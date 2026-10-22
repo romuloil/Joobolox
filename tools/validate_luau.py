@@ -44,7 +44,7 @@ def main() -> int:
     print(f"Luau compile: {len(scripts) - len(failures)}/{len(scripts)} game scripts passed")
     if failures:
         return 1
-    for name in ["prison_rules_spec.luau", "police_rules_spec.luau", "work_role_rules_spec.luau", "taxi_rules_spec.luau"]:
+    for name in ["prison_rules_spec.luau", "police_rules_spec.luau", "work_role_rules_spec.luau", "taxi_rules_spec.luau", "prison_activity_rules_spec.luau"]:
         test = root / "tests" / name
         if not test.exists():
             continue
@@ -55,6 +55,8 @@ def main() -> int:
     fixture = root / "tests/service_fixture.luau"
     specs = [
         ("prison_service_spec.luau", [mock, root / "src/ReplicatedStorage/Shared/PrisonRules.lua", root / "src/ServerScriptService/Services/PrisonService.lua"]),
+        ("prison_outfit_spec.luau", [mock, fixture, root / "src/ServerScriptService/Services/PrisonOutfitService.lua"]),
+        ("prison_activity_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/PrisonActivityConfig.lua", root / "src/ReplicatedStorage/Shared/PrisonActivityRules.lua", root / "src/ServerScriptService/Services/PrisonActivityService.lua"]),
         ("police_service_spec.luau", [mock, root / "src/ReplicatedStorage/Shared/PoliceConfig.lua", root / "src/ReplicatedStorage/Shared/PoliceRules.lua", root / "src/ServerScriptService/Services/PoliceService.lua"]),
         ("work_role_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/WorkRoleConfig.lua", root / "src/ReplicatedStorage/Shared/WorkRoleRules.lua", root / "src/ServerScriptService/Services/WorkRoleService.lua"]),
         ("vehicle_service_spec.luau", [mock, fixture, root / "src/ReplicatedStorage/Shared/GameConfig.lua", root / "src/ServerScriptService/Services/CarBuilder.lua", root / "src/ServerScriptService/Services/VehicleService.lua"]),

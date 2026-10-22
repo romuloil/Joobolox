@@ -11,6 +11,7 @@ return function(mock, GameConfig, Config, CivicBuilder)
  local station = civic:WaitForChild(Config.Station.Name)
  local prison = civic:WaitForChild(Config.Prison.Name)
  check(Config.SentenceSeconds == 60, "sentence must remain 60s")
+ check(Config.CellLockSeconds == 5, "initial cell seal follows the five-second reference")
  check(#map:WaitForChild("JobLocations"):GetChildren() == 4, "all four shops retained")
  check(#sites.escapeSteps == 3, "three ordered escape checkpoints")
  check(not sites.intakePrompt.Enabled, "test intake disabled until service verifies Studio")
@@ -69,12 +70,32 @@ return function(mock, GameConfig, Config, CivicBuilder)
  for _,p in ipairs(civic:GetDescendants()) do
   if p:IsA("BasePart") and p.CanCollide then table.insert(blockers,p) end
  end
+ -- Route points must be supported by real geometry as well as clear overhead.
+ -- The small allowance covers the existing root-to-feet gap and normal steps;
+ -- it cannot hide a missing storey floor or staircase landing.
+ local floors={}
+ for _,p in ipairs(map:GetDescendants())do
+  if p:IsA("BasePart") and p.CanCollide and math.abs(p.CFrame.UpVector.Y)>0.999
+   and (p:IsDescendantOf(civic) or string.match(p.Name,"^Ground_%d+_%d+$")) then
+   table.insert(floors,p)
+  end
+ end
+ local function floorBelow(position)
+  local foot=position.Y-2.5
+  for _,p in ipairs(floors)do
+   local q=p.CFrame:PointToObjectSpace(position)
+   local top=p.Position.Y+p.Size.Y/2
+   if math.abs(q.X)<=p.Size.X/2+0.05 and math.abs(q.Z)<=p.Size.Z/2+0.05
+    and top<=foot+0.8 and top>=foot-3.5 then return true end
+  end
+  return false
+ end
  local function clear(position, stairs)
   for _,p in ipairs(blockers) do
    local q=p.CFrame:PointToObjectSpace(position)
    -- Stair walking permits a normal 0.8-stud step-up under the feet, while
    -- still testing walls, landings above the head and the cabin floor opening.
-   local stepSurface = stairs and (p.Name=="Degrau" or p.Name=="Patamar")
+   local stepSurface = stairs and (p.Name=="Degrau" or p.Name=="Patamar" or p:GetAttribute("StairSurface")==true)
     and p.Position.Y+p.Size.Y/2 <= position.Y-2.5+0.8
    if not stepSurface and math.abs(q.X)<p.Size.X/2+0.95 and math.abs(q.Z)<p.Size.Z/2+0.95 and math.abs(q.Y)<p.Size.Y/2+2.5 then
     return false,p.Name
@@ -90,6 +111,7 @@ return function(mock, GameConfig, Config, CivicBuilder)
     local pos=a:Lerp(b,n/samples)
     local ok,blocker=clear(pos,stairs)
     check(ok,name.." walking segment "..i.." blocked by "..tostring(blocker).." near "..tostring(base:PointToObjectSpace(pos)))
+    check(floorBelow(pos),name.." walking segment "..i.." has no floor below "..tostring(base:PointToObjectSpace(pos)))
    end
   end
  end

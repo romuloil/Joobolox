@@ -8,14 +8,17 @@ local UIScaler = require(script.Parent:WaitForChild("UIScaler"))
 local PrisonController = {}
 local player = Players.LocalPlayer
 local initialized = false
-local card, timerLabel, progressLabel, hintLabel
+local card, timerLabel, progressLabel, hintLabel, activityLabel
 local deadline, cellOpensAt = 0, 0
 local cellId, serverHint = "", ""
 local detained, completed, totalSteps = false, 0, 3
 local escapePrompts = {}
+local activityPrompts = {}
 local escapeOrder = { EscapeHatchPrompt = 1, EscapePassagePrompt = 2, EscapeExitPrompt = 3 }
 
 local function refreshPrompts()
+	local time = Workspace:GetServerTimeNow()
+	local unlocked = detained and time >= cellOpensAt
 	for prompt, index in pairs(escapePrompts) do
 		if prompt.Parent then
 			-- Somente a próxima interação fica visível neste cliente.
@@ -25,12 +28,33 @@ local function refreshPrompts()
 			escapePrompts[prompt] = nil
 		end
 	end
+	for prompt in pairs(activityPrompts) do
+		if not prompt.Parent then activityPrompts[prompt] = nil
+		elseif prompt:GetAttribute("PrisonPickpocket") then
+			local copRoot = prompt.Parent
+			local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			local officer = copRoot.Parent and Players:GetPlayerFromCharacter(copRoot.Parent)
+			local behind = false
+			if myRoot and copRoot:IsA("BasePart") then
+				local offset = myRoot.Position - copRoot.Position
+				behind = offset.Magnitude > 0.1 and offset.Magnitude <= 5
+					and offset.Unit:Dot(-copRoot.CFrame.LookVector) >= 0.45
+			end
+			prompt.Enabled = unlocked and officer ~= player and officer ~= nil
+				and officer:GetAttribute("PoliceDuty") == true and behind
+				and player:GetAttribute("PrisonKeycard") ~= true
+		elseif prompt:GetAttribute("PrisonDrawerCell") then
+			prompt.Enabled = unlocked and prompt:GetAttribute("PrisonDrawerCell") == cellId
+		end
+	end
 end
 
 local function watchPrompt(item)
-	if not item:IsA("ProximityPrompt") or not escapeOrder[item.Name] then
+	if not item:IsA("ProximityPrompt") then
 		return
 	end
+	activityPrompts[item] = true -- atributos podem chegar depois da instância
+	if not escapeOrder[item.Name] then return end
 	local map = Workspace:FindFirstChild("Map")
 	local locations = map and map:FindFirstChild("CivicLocations")
 	if locations and item:IsDescendantOf(locations) then
@@ -67,6 +91,16 @@ local function updateTimer()
 	else
 		progressLabel.Text = ("ROTA DE FUGA  ·  %d/%d"):format(completed, totalSteps)
 		hintLabel.Text = serverHint
+	end
+	local exerciseUntil = player:GetAttribute("PrisonExerciseUntil")
+	if type(exerciseUntil) == "number" and exerciseUntil > time then
+		activityLabel.Text = ("EXERCÍCIO • Permaneça no aparelho por %ds."):format(math.ceil(exerciseUntil-time))
+	elseif player:GetAttribute("PrisonKeycard") then
+		activityLabel.Text = "CARTÃO DE ACESSO • Use leitores nas áreas restritas."
+	elseif player:GetAttribute("PrisonStoredKeycard") then
+		activityLabel.Text = "GAVETA • Seu cartão está guardado na sua cela."
+	else
+		activityLabel.Text = "REFEITÓRIO • ENFERMARIA • EXERCÍCIOS NO PÁTIO"
 	end
 	refreshPrompts()
 end
@@ -122,7 +156,7 @@ function PrisonController.init()
 	card.Name = "DetentionCard"
 	card.AnchorPoint = Vector2.new(0.5, 1)
 	card.Position = UDim2.new(0.5, 0, 1, -28)
-	card.Size = UDim2.fromOffset(360, 146)
+	card.Size = UDim2.fromOffset(360, 177)
 	card.BackgroundColor3 = Color3.fromRGB(20, 31, 46)
 	card.BackgroundTransparency = 0.08
 	card.BorderSizePixel = 0
@@ -132,7 +166,7 @@ function PrisonController.init()
 	corner.CornerRadius = UDim.new(0, 12)
 	corner.Parent = card
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(96, 132, 162)
+	stroke.Color = Color3.fromRGB(238, 143, 51)
 	stroke.Transparency = 0.35
 	stroke.Thickness = 1
 	stroke.Parent = card
@@ -143,12 +177,14 @@ function PrisonController.init()
 	timerLabel = text(card, "Time", "", UDim2.fromOffset(240, 10), UDim2.fromOffset(104, 25),
 		Color3.fromRGB(255, 204, 118), Enum.Font.GothamBold, 18)
 	timerLabel.TextXAlignment = Enum.TextXAlignment.Right
-	text(card, "Explanation", "Aguarde a liberação ou siga a passagem de manutenção.",
+	text(card, "Explanation", "Use as áreas comuns após a abertura da cela. Sua roupa volta ao sair.",
 		UDim2.fromOffset(16, 39), UDim2.fromOffset(328, 34), Color3.fromRGB(201, 215, 229))
 	progressLabel = text(card, "Progress", "", UDim2.fromOffset(16, 81), UDim2.fromOffset(328, 18),
 		Color3.fromRGB(255, 204, 118), Enum.Font.GothamBold, 11)
 	hintLabel = text(card, "Hint", "", UDim2.fromOffset(16, 102), UDim2.fromOffset(328, 34),
 		Color3.fromRGB(235, 242, 248), Enum.Font.GothamMedium, 13)
+	activityLabel = text(card, "Activity", "", UDim2.fromOffset(16, 141), UDim2.fromOffset(328, 26),
+		Color3.fromRGB(255, 204, 118), Enum.Font.GothamMedium, 11)
 
 	for _, attribute in ipairs({ "Detained", "PrisonEndsAt", "PrisonStep", "PrisonSteps", "PrisonHint", "PrisonCell", "PrisonCellOpensAt" }) do
 		player:GetAttributeChangedSignal(attribute):Connect(readAttributes)
@@ -160,9 +196,7 @@ function PrisonController.init()
 	readAttributes()
 	task.spawn(function()
 		while gui.Parent do
-			if card.Visible then
-				updateTimer()
-			end
+			if card.Visible then updateTimer() else refreshPrompts() end
 			task.wait(0.2)
 		end
 	end)

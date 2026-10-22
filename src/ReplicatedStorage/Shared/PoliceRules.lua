@@ -12,8 +12,8 @@ function Rules.canJoin(alive, detained, count, slots)
 	return alive == true and not detained and Rules.finite(count) and Rules.finite(slots)
 		and count >= 0 and slots > 0 and count < slots
 end
-function Rules.canCapture(onDuty, equipped, distance, now, stunnedUntil, wanted, detained, protected)
-	return onDuty == true and equipped == true and wanted == true and not detained and not protected
+function Rules.canCapture(onDuty, equipped, distance, now, stunnedUntil, wanted, detained, protected, prisonOffense)
+	return onDuty == true and equipped == true and wanted == true and (not detained or prisonOffense == true) and not protected
 		and Rules.finite(distance) and distance >= 0 and distance <= 8
 		and Rules.finite(now) and Rules.finite(stunnedUntil) and now < stunnedUntil
 end

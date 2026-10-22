@@ -280,6 +280,71 @@ function VehicleService.getCar(player)
 	return nil
 end
 
+-- Chamadas internas da polícia: a autorização do crime fica no PoliceService.
+-- A lentidão usa o registro do servidor; os atributos apenas informam o cliente.
+local function clampHorizontal(value, limit)
+	local planar = Vector3.new(value.X, 0, value.Z)
+	if planar.Magnitude > limit then planar = planar.Unit * limit end
+	return planar + Vector3.new(0, value.Y, 0)
+end
+
+local function enforceSlow(record)
+	local chassis = record.model.PrimaryPart
+	if not chassis then return end
+	chassis.AssemblyLinearVelocity = clampHorizontal(chassis.AssemblyLinearVelocity, 12)
+	local actuator = chassis:FindFirstChildOfClass("LinearVelocity")
+	if actuator then actuator.VectorVelocity = clampHorizontal(actuator.VectorVelocity, 12) end
+end
+
+function VehicleService.applyPoliceSlow(player, seconds)
+	local record = VehicleService.getCar(player)
+	local _, humanoid = SecurityService.getLivingCharacter(player)
+	if not record or not humanoid or humanoid.SeatPart ~= record.driver
+		or record.driver.Occupant ~= humanoid or WorkRoleService.hasRole(player, "Policial")
+		or type(seconds) ~= "number" or seconds ~= seconds or seconds <= 0 or seconds == math.huge then
+		return false
+	end
+	record.slowUntil = Workspace:GetServerTimeNow() + math.min(seconds, 15)
+	record.model:SetAttribute("PoliceSlowUntil", record.slowUntil)
+	record.model:SetAttribute("PoliceSpeedLimit", 12)
+	enforceSlow(record)
+	if not record.slowLoop then
+		record.slowLoop = true
+		task.spawn(function()
+			while cars[player] == record and record.model.Parent
+				and Workspace:GetServerTimeNow() < record.slowUntil do
+				enforceSlow(record)
+				task.wait(0.1)
+			end
+			record.slowLoop = false
+			if record.model.Parent then
+				record.model:SetAttribute("PoliceSlowUntil", nil)
+				record.model:SetAttribute("PoliceSpeedLimit", nil)
+			end
+		end)
+	end
+	return true
+end
+
+function VehicleService.ejectFromVehicle(player)
+	local character, humanoid = SecurityService.getLivingCharacter(player)
+	local seat = humanoid and humanoid.SeatPart
+	if not seat or WorkRoleService.hasRole(player, "Policial") then return false end
+	local registered = false
+	for _, record in pairs(cars) do
+		if record.model.Parent and (seat == record.driver or seat == record.passenger) then
+			registered = true; break
+		end
+	end
+	if not registered then return false end
+	local weld = seat:FindFirstChild("SeatWeld")
+	if weld and weld:IsA("Weld") and ((weld.Part0 and weld.Part0:IsDescendantOf(character))
+		or (weld.Part1 and weld.Part1:IsDescendantOf(character))) then weld:Destroy() end
+	humanoid.Sit = false
+	humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+	return true
+end
+
 function VehicleService.isDrivingWorkVehicle(player, role)
 	local record = VehicleService.getCar(player)
 	local _, humanoid = SecurityService.getLivingCharacter(player)

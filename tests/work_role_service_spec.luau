@@ -57,8 +57,14 @@ return function(mockSource,fixtureSource,configSource,rulesSource,serviceSource)
   check(s.equipUniform(p,'Taxista'),'taxi uniform available only own job')
   local added=f.instance('Shirt');added.ShirtTemplate='late-shirt';added.Parent=p.Character
   check(added.ShirtTemplate=='','late-loaded clothes also hidden')
+  added.ShirtTemplate='late-final-template'
+  check(added.ShirtTemplate=='','appearance template assigned after parenting stays hidden')
+  local jacket=f.instance('Accessory');jacket.AccessoryType=f.mock.Enum.AccessoryType.Jacket;jacket.Parent=p.Character
+  local jacketHandle=f.instance('Part');jacketHandle.Name='Handle';jacketHandle.Transparency=0.35;jacketHandle.Parent=jacket
+  check(jacketHandle.Transparency==1,'layered jacket cannot cover work uniform')
   p:SetAttribute('Detained',true)
-  check(s.getRole(p)==nil and added.ShirtTemplate=='late-shirt','detention clears lease and restores late clothes')
+  check(s.getRole(p)==nil and added.ShirtTemplate=='late-final-template','detention clears lease and restores latest loaded clothes')
+  check(jacketHandle.Transparency==0.35,'detention restores layered clothing before custody takes over')
  end
  local f=fixture(false);local p,s=f.player1,f.service
  check(s.assign(p,'Policial')and s.equipUniform(p),'setup for death')

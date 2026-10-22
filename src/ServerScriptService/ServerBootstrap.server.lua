@@ -26,6 +26,7 @@ local TaxiService = require(Services:WaitForChild("TaxiService"))
 local WorkRoleService = require(Services:WaitForChild("WorkRoleService"))
 local WorkplaceBuilder = require(Services:WaitForChild("WorkplaceBuilder"))
 local StreetNPCService = require(Services:WaitForChild("StreetNPCService"))
+local PrisonActivityService = require(Services:WaitForChild("PrisonActivityService"))
 
 -- Segura o nascimento dos jogadores até o mapa existir
 Players.CharacterAutoLoads = false
@@ -71,10 +72,18 @@ VehicleService.configureWorkplaces(workplaces, CivicBuilder.sites.personalGarage
 -- quem fica preso; abordagem e algemamento são conferidos pelo servidor.
 PrisonService.init(remotes, CivicBuilder.sites, {
 	beforeDetain = function(player)
+		PrisonActivityService.clearPlayer(player)
 		TaxiService.leave(player)
 		PoliceService.leave(player)
 		JobService.leave(player)
 		VehicleService.prepareForDetention(player)
+	end,
+	afterRelease = function(player, escaped, reason)
+		PrisonActivityService.clearPlayer(player)
+		PoliceService.handlePrisonRelease(player, escaped, reason)
+	end,
+	afterReturnToCell = function(player)
+		PrisonActivityService.clearPlayer(player)
 	end,
 })
 PoliceService.init(remotes, CivicBuilder.sites, {
@@ -85,6 +94,13 @@ PoliceService.init(remotes, CivicBuilder.sites, {
 	end,
 	beforeStun = VehicleService.prepareForDetention,
 	prisonService = PrisonService,
+	vehicleService = VehicleService,
+	economyService = EconomyService,
+})
+PrisonActivityService.init(remotes, CivicBuilder.sites, {
+	prisonService = PrisonService,
+	policeService = PoliceService,
+	workRoleService = WorkRoleService,
 })
 TaxiService.init(remotes, CivicBuilder.sites.taxi, {
 	vehicleService = VehicleService,

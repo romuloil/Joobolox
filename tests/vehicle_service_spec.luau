@@ -71,5 +71,27 @@ return function(mockSource,fixtureSource,gameConfigSource,carBuilderSource,vehic
  p:SetAttribute('Detained',false);p.Character:FindFirstChildOfClass('Humanoid').SeatPart=nil;c.driver.Occupant=nil;f.move(p,100);f.advance(1.1);check(s.requestWorkVehicle(p,'Policial'),'setup vehicle for death cleanup')
  local doomed=s.getCar(p).model;p.Character:FindFirstChildOfClass('Humanoid').Died:Fire()
  check(s.getCar(p)==nil and doomed.Parent==nil,'death removes leased vehicle')
+ -- A deployed strip changes the actual controller velocity, expires, and cannot
+ -- be used on officers, passengers or forged/unregistered models.
+ local slow=fixture();local sp,vs=slow.player1,slow.service;local sm=slow.mock
+ slow.move(sp,200);check(vs.requestPersonalAtGarage(sp),'personal car for strip scenario')
+ local sc=vs.getCar(sp);local chassis=sc.model.PrimaryPart
+ chassis.AssemblyLinearVelocity=sm.Vector3.new(60,3,0)
+ local drive=chassis:FindFirstChildOfClass('LinearVelocity');drive.VectorVelocity=sm.Vector3.new(85,-2,0)
+ check(not vs.applyPoliceSlow(sp,0/0) and not vs.applyPoliceSlow(sp,-2),'invalid slow duration rejected')
+ check(vs.applyPoliceSlow(sp,2),'registered civilian driver can be slowed')
+ check(chassis.AssemblyLinearVelocity.X==12 and chassis.AssemblyLinearVelocity.Y==3,'server reduces horizontal speed without cancelling vertical support')
+ check(drive.VectorVelocity.X==12 and drive.VectorVelocity.Y==-2,'driving actuator also capped')
+ check(sc.model:GetAttribute('PoliceSlowUntil')==slow.now()+2,'client receives deadline for controller')
+ chassis.AssemblyLinearVelocity=sm.Vector3.new(90,0,0);slow.advance(0.15)
+ check(chassis.AssemblyLinearVelocity.X==12,'server repeats cap while effect is active')
+ slow.advance(2)
+ check(sc.model:GetAttribute('PoliceSlowUntil')==nil,'slow effect clears after deadline')
+ slow.setRole(sp,'Policial')
+ check(not vs.applyPoliceSlow(sp,3) and not vs.ejectFromVehicle(sp),'police immune to strip and cuff ejection')
+ slow.setRole(sp,nil)
+ check(vs.ejectFromVehicle(sp) and sp.Character:FindFirstChildOfClass('Humanoid').Sit==false,'cuff ejection releases actual registered occupant')
+ sp.Character:FindFirstChildOfClass('Humanoid').SeatPart=nil
+ check(not vs.applyPoliceSlow(sp,3) and not vs.ejectFromVehicle(sp),'on-foot character is not treated as driver')
  print('PASS VehicleService: '..count..' lifecycle checks (mock services, actual CarBuilder)')
 end

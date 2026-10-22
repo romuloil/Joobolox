@@ -14,7 +14,7 @@ local PoliceController = {}
 local player = Players.LocalPlayer
 local initialized = false
 local request, gui, panel, panelTitle, panelSubtitle, content, banner, dutyText, patrolText
-local crosshair, aimHint, statusLabel, mobileAction
+local crosshair, aimHint, statusLabel, mobileAction, custodyLabel
 local currentPanel, panelData = nil, {}
 local state = { onDuty = false, count = 0, slots = 3, equipped = false, patrolStep = 0, patrolTotal = 4 }
 local reports = {}
@@ -90,8 +90,11 @@ local function refreshCuffPrompts()
 			local valid = trainingOwner == player.UserId and type(trainingStun) == "number" and trainingStun > time
 			if target then
 				local stunned = target:GetAttribute("StunnedUntil")
-				valid = target ~= player and target:GetAttribute("Wanted") == true
-					and type(stunned) == "number" and stunned > time
+				local humanoid=target.Character and target.Character:FindFirstChildOfClass("Humanoid")
+				local seated=humanoid and humanoid.SeatPart~=nil
+				valid = target ~= player and target:GetAttribute("Wanted") == true and not target:GetAttribute("CuffedUntil")
+					and ((type(stunned)=="number" and stunned>time) or seated)
+				prompt.ActionText=seated and "Retirar do veículo" or "Algemar"
 			end
 			prompt.Enabled = holdingCuffs and valid
 		end
@@ -115,16 +118,20 @@ end
 local function refreshAim()
 	if not crosshair then return end
 	local kind = toolKind()
-	crosshair.Visible = state.onDuty and (kind == "Spray" or kind == "Cuff") and not panel.Visible
+	crosshair.Visible = state.onDuty and (kind == "Spray" or kind == "Cuff" or kind == "Pistol" or kind == "Taser") and not panel.Visible
 	if kind == "Spray" then
 		aimHint.Text = "LANÇADOR DE ÁGUA\nMire e use a ferramenta para imobilizar."
+	elseif kind == "Pistol" then
+		aimHint.Text = "PISTOLA DE SERVIÇO\nApenas procurados. Alvos mortos não podem ser presos."
+	elseif kind == "Taser" then
+		aimHint.Text = "TASER\nImobilize o procurado antes de algemar."
 	elseif kind == "Cuff" then
-		aimHint.Text = "ALGEMAS\nAproxime-se do suspeito imobilizado e interaja."
+		aimHint.Text = "ALGEMAS\nE retira do carro ou algema um procurado imobilizado."
 	end
 	if mobileAction then
 		mobileAction.Visible = state.onDuty and kind ~= nil and not panel.Visible
 			and UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-		local names = { Spray = "ÁGUA", Cuff = "ALGEMAR", Flashlight = "LUZ", Radio = "RÁDIO" }
+		local names = { Pistol = "PISTOLA", Taser = "TASER", Spike = "BARREIRA", Spray = "ÁGUA", Cuff = "ALGEMAR", Flashlight = "LUZ", Radio = "RÁDIO" }
 		mobileAction.Text = names[kind] or "USAR"
 	end
 	refreshCuffPrompts()
@@ -161,14 +168,16 @@ local function activate(tool)
 		send("Flashlight")
 	elseif kind == "Radio" then
 		send("Radio")
-	elseif kind == "Spray" then
+	elseif kind == "Spike" then
+		send("Spike")
+	elseif kind == "Spray" or kind == "Pistol" or kind == "Taser" then
 		local _, point = aimResult()
 		local character = player.Character
 		local head = character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
 		if head and point then
 			local direction = point - head.Position
 			if direction.Magnitude > 0.01 then
-				send("Spray", { direction = direction.Unit })
+				send(kind, { direction = direction.Unit })
 			end
 		end
 	elseif kind == "Cuff" then
@@ -315,14 +324,15 @@ local function renderPanel()
 		button(content, state.onDuty and "Encerrar meu turno" or "Entrar em serviço", function()
 			send("Duty", not state.onDuty)
 		end, state.onDuty and ORANGE or BLUE)
-		paragraph("Retire o kit no arsenal. O lançador de água imobiliza suspeitos válidos; as algemas exigem aproximação. O policial não pode prender cidadãos inocentes.", 82)
+		paragraph("Retire o kit no arsenal. Água/taser imobilizam procurados; as algemas iniciam transferência de 10 s. Abordagens indevidas geram multa e perda do plantão.", 82)
 		paragraph("Na prisão: faça a ronda, consulte ocorrências, opere acessos e pratique no setor de treinamento.", 60)
 		paragraph("Retire o uniforme no vestiário e a viatura na garagem policial. Ambos são devolvidos ao encerrar o plantão.", 62)
 	elseif currentPanel == "armory" then
-		paragraph("Kit de serviço: lançador de água, algemas, lanterna e rádio. O equipamento é temporário e só funciona em serviço.", 62)
+		paragraph("Kit: pistola, taser, algemas, barreira de pneus, água, lanterna e rádio. Só funciona em serviço.", 62)
 		button(content, "Retirar / repor meu kit", function() send("Gear") end)
+		paragraph("A pistola causa dano apenas em procurados. Um alvo morto não pode ser algemado; prefira o taser para capturas.", 64)
 		paragraph("Selecione as ferramentas pela mochila do Roblox. No computador, também use as teclas numéricas. No celular, toque na ferramenta e mire pelo centro da tela.", 78)
-		paragraph("Lançador: imobilize o alvo. Algemas: aproxime-se e use a interação. Rádio: consulte a equipe. Lanterna: acenda ou apague ao usar.", 76)
+		paragraph("Taser/água: imobilizar. Algemas: E perto do alvo. Barreira: use a pé para reduzir a velocidade de carros de procurados.", 76)
 	elseif currentPanel == "reports" then
 		renderReports()
 	elseif currentPanel == "control" then
@@ -437,6 +447,13 @@ function PoliceController.init()
 	aimHint.TextXAlignment, aimHint.TextStrokeTransparency = Enum.TextXAlignment.Center, 0.25
 	statusLabel = text(gui, "ToolNotice", "", UDim2.fromOffset(320, 36), UDim2.new(0.5, -160, 0.5, 110), PAPER, Enum.Font.GothamBold, 13)
 	statusLabel.TextXAlignment, statusLabel.TextStrokeTransparency = Enum.TextXAlignment.Center, 0.25
+	custodyLabel=text(gui,"CustodyCountdown","",UDim2.fromOffset(360,44),UDim2.new(0.5,-180,0,62),PAPER,Enum.Font.GothamBold,15)
+	custodyLabel.TextXAlignment=Enum.TextXAlignment.Center
+	custodyLabel.BackgroundColor3=BLUE
+	custodyLabel.BackgroundTransparency=0.08
+	custodyLabel.Visible=false
+	corner(custodyLabel,9)
+	UIScaler.attach(custodyLabel)
 	mobileAction = Instance.new("TextButton")
 	mobileAction.Name = "UsePoliceTool"
 	mobileAction.AnchorPoint, mobileAction.Position = Vector2.new(1, 0.5), UDim2.new(1, -20, 0.5, -25)
@@ -473,6 +490,10 @@ function PoliceController.init()
 		end
 		if os.clock() - lastPromptRefresh > 0.2 then
 			lastPromptRefresh = os.clock()
+			local deadline=player:GetAttribute("CuffedUntil")
+			local remaining=type(deadline)=="number" and math.max(0,math.ceil(deadline-Workspace:GetServerTimeNow())) or 0
+			custodyLabel.Visible=remaining>0
+			if remaining>0 then custodyLabel.Text=("ALGEMADO · transferência em %d s"):format(remaining) end
 			refreshCuffPrompts()
 			if statusLabel.Text ~= "" and os.clock() > noticeUntil then statusLabel.Text = "" end
 		end

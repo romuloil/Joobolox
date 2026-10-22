@@ -72,7 +72,7 @@ def build(source: Path, output: Path) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", nargs="?", type=Path, default=Path("src"))
-    parser.add_argument("output", nargs="?", type=Path, default=Path("dist/LittleLife_Marco5_3.rbxlx"))
+    parser.add_argument("output", nargs="?", type=Path, default=Path("dist/LittleLife_Marco5_4.rbxlx"))
     args = parser.parse_args()
     count = build(args.source, args.output)
     print(f"Built {args.output}: {count} scripts, source round-trip verified.")

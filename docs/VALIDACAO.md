@@ -1,44 +1,42 @@
-# Validação — Marco 5.3
+# Validação — Marco 5.4
 
-Ferramentas oficiais do Luau 0.698, revisão
-`ff6d381e57bcd1799d850d7fabe543c0f0980a5d`.
+Ferramentas oficiais Luau 0.698, revisão `ff 6d 381e 57bcd 1799d 850d 7fabe 543c 0f 0980a 5d`.
 
-- **53/53 scripts compilados**.
-- **134 verificações de regras**: prisão42, polícia34, profissão/uniforme39 e táxi19.
-- **344 verificações de serviços**: prisão117, polícia74, uniformes87, veículos25 e
-  táxi41. Executam os módulos reais com relógio, eventos e instâncias simulados.
-- **85 verificações de moradores**: fábrica NPCKit compartilhada, oito posições,
-  espaço nas calçadas, limite de NPCs, conversa próxima, inicialização assíncrona
-  e rejeição de chamadas inválidas.
-- **73.227 verificações geométricas**: delegacia/LXR em lotes reservados, acesso a
-  recepção/vestiário/garagem, 11 vagas para veículos sem obstáculos, posto afastado,
-  trilha após a fuga, celas/túnel/torres, terreno e 237 árvores no cenário simulado.
+- 57/57 scripts compilados.
+- 153 verificações de regras: prisão 42, polícia 34, profissões 39, táxi 19, atividades 19.
+- 564 verificações de serviços reais com objetos simulados: prisão 134, roupa de
+  custódia 103, atividades 42, polícia 101, uniformes profissionais 107, veículos 36, táxi 41.
+- 85 verificações de moradores com consultas ao mapa gerado sob simulação.
+- 89.392 verificações geométricas, com 1.642 peças cívicas e 237 árvores. Conferem celas fechadas, caminhos de personagem, apoio real sob
+  os pés, escadas, pisos superiores, portas, vagas, lotes, terreno e árvores.
 - O gerador relê o XML e compara o conteúdo de todos os scripts com os fontes.
 
-Os testes de uniforme cobrem R6/R15, restauração de roupas/chapéus, distância do
-vestiário, exclusividade de profissão, atributos falsos, reset e falha de construção.
-Os testes de carro executam também o CarBuilder real; verificam retirada por cargo,
-local, vaga ocupada, motorista/dono, perda do emprego, morte e garagem pessoal.
-Os testes de táxi verificam embarque, viagem plausível, pagamento único, banco
-reservado, criação assíncrona do NPC, cancelamento e transição de emprego.
+A roupa de custódia é testada em R 6/R 15, incluindo roupas que carregam depois, novas
+propriedades do avatar, restauração, troca de personagem e falha de construção.
+Os testes de atividades exercitam distância, cura limitada, intervalos, exercício
+interrompido, furto com duração e posição, paredes e atributos falsos, gavetas, portas,
+entrada em área restrita e limpeza de objetos. A criação do prompt após assumir
+realmente o cargo policial tem regressão específica.
+
+A polícia é testada em captura autorizada, espera de 10 s, cancelamento, recaptura
+interna, multa e afastamento por abuso, dano apenas em procurados, vítima morta,
+pagamento único e ausência de recompensa em simulações. Veículos testam retirada
+por emprego/local, motorista, perda do cargo, lentidão temporária e expulsão.
 
 ## Limites
 
 Não houve execução do Roblox Studio. Os testes não simulam o motor físico,
 renderização, avatares reais, rede, animações online ou DataStore. O gerador aleatório
-simulado é diferente do Roblox. A validação de espaço usa envelopes de personagem
-ou carro e não substitui atravessar os locais e dirigir no motor real.
-
-Ainda precisam de teste no Studio: proporções e aparência, roupas em avatares variados,
-sedãs, portas e giroflex visual, NPC sentado, ferramentas no celular, salvamento,
-replicação e desempenho. O roteiro está em `TESTE_NO_STUDIO.md`.
+simulado é diferente do Roblox. Os envelopes geométricos não substituem caminhar e
+dirigir no motor real. Confira também roupas em camadas, prompts, barreiras,
+escadas, colisões, física do passageiro, celular e desempenho.
 
 ## Reproduzir
 
 ```sh
 python tools/validate_luau.py --luau-dir /workspace/tooling/luau-0.698/source
-python tools/build_rbxlx.py src dist/LittleLife_Marco5_3.rbxlx
+python tools/build_rbxlx.py src dist/LittleLife_Marco 5_4.rbxlx
 ```
 
-Em outra máquina, ajuste o caminho das ferramentas; veja `tools/VALIDACAO.md`.
-Para jogar no Studio, basta o `.rbxlx` entregue.
+Ajuste o caminho das ferramentas em outra máquina; veja `tools/VALIDACAO.md`.
+Para jogar no Studio, basta o `.rbxlx` entregue. Roteiro: `TESTE_NO_STUDIO.md`.

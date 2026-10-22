@@ -12,6 +12,7 @@ local GameConfig = require(Shared:WaitForChild("GameConfig"))
 local CivicConfig = require(Shared:WaitForChild("CivicConfig"))
 local Rules = require(Shared:WaitForChild("PrisonRules"))
 local SecurityService = require(script.Parent:WaitForChild("SecurityService"))
+local PrisonOutfitService = require(script.Parent:WaitForChild("PrisonOutfitService"))
 
 local PrisonService = {}
 local sessions = {}
@@ -23,6 +24,21 @@ local WALK_SPEED = GameConfig.WalkSpeed
 
 local function now()
 	return Workspace:GetServerTimeNow()
+end
+
+local function restrained(player)
+	local time = now()
+	for _, attribute in ipairs({"StunnedUntil", "CuffedUntil"}) do
+		local deadline = player:GetAttribute(attribute)
+		if Rules.isFinite(deadline) and deadline > time then return true end
+	end
+	return false
+end
+
+local function callHook(name, ...)
+	if not hooks or not hooks[name] then return end
+	local ok, err = pcall(hooks[name], ...)
+	if not ok then warn("[PrisonService] Falha no evento " .. name .. ": " .. tostring(err)) end
 end
 
 local function promptPosition(prompt)
@@ -178,8 +194,9 @@ local function placeInPrison(player, session)
 		session.previousWalkSpeed = Rules.isFinite(humanoid.WalkSpeed) and humanoid.WalkSpeed > 0
 			and humanoid.WalkSpeed or WALK_SPEED
 	end
-	humanoid.WalkSpeed = WALK_SPEED
+	humanoid.WalkSpeed = restrained(player) and 0 or WALK_SPEED
 	moveCharacter(character, humanoid, root, session.cell and session.cell.spawn or sites.prisonSpawn)
+	PrisonOutfitService.apply(player)
 	session.completed = 0
 	session.lastStepAt = now()
 	session.lastStepPosition = root.Position
@@ -190,6 +207,29 @@ end
 
 function PrisonService.isDetained(player)
 	return sessions[player] ~= nil
+end
+
+function PrisonService.getAssignedCellId(player)
+	local session = sessions[player]
+	return session and session.cell and session.cell.id or nil
+end
+
+function PrisonService.getDetentionReason(player)
+	local session = sessions[player]
+	return session and session.reason or nil
+end
+
+-- Recaptura interna conserva a mesma pena e o mesmo prazo original da porta.
+function PrisonService.returnToCell(player)
+	local session = sessions[player]
+	if not session or not SecurityService.getLivingCharacter(player) then return false end
+	if Rules.remaining(session.endsAt, now()) <= 0 then
+		PrisonService.release(player, false)
+		return false
+	end
+	placeInPrison(player, session)
+	callHook("afterReturnToCell", player)
+	return true
 end
 
 -- Somente para outros serviços do servidor. PoliceService confere profissão e
@@ -229,7 +269,7 @@ function PrisonService.setCellDoor(cellId, open)
 	end
 	if session and not session.cellOpened and now() >= session.cellOpensAt then
 		-- Resolve também a pequena janela antes do próximo tick: uma ordem
-		-- manual após os 15 s não deve ser desfeita pela abertura automática.
+		-- manual após o lacre não deve ser desfeita pela abertura automática.
 		session.cellOpened = true
 		sendState(owner, session)
 	end
@@ -256,6 +296,7 @@ function PrisonService.release(player, escaped)
 	-- Retira primeiro: timeout e último prompt no mesmo frame só resolvem uma vez.
 	sessions[player] = nil
 	clearAttributes(player)
+	PrisonOutfitService.restore(player)
 	local character, humanoid, root = SecurityService.getLivingCharacter(player)
 	if humanoid then
 		if session.humanoid == humanoid and Rules.isFinite(session.previousWalkSpeed) then
@@ -268,6 +309,7 @@ function PrisonService.release(player, escaped)
 		end
 	end
 	freeCell(player, session)
+	callHook("afterRelease", player, escaped, session.reason)
 	if player.Parent == Players then
 		uiUpdate:FireClient(player, "PrisonState", { active = false, escaped = escaped == true })
 		uiUpdate:FireClient(player, "Notice", {
@@ -307,7 +349,7 @@ function PrisonService.detain(player, reason)
 	end
 	local session = {
 		endsAt = deadline, completed = 0, reason = reason, cell = cell,
-		cellOpensAt = cell and time + math.min(CivicConfig.CellLockSeconds or 15, duration - 1) or nil,
+		cellOpensAt = cell and time + math.min(CivicConfig.CellLockSeconds or 5, duration - 1) or nil,
 		cellOpened = cell == nil,
 	}
 	if cell then
@@ -334,6 +376,7 @@ function PrisonService.detain(player, reason)
 		return false, "cancelled"
 	end
 	placeInPrison(player, session)
+	callHook("afterDetain", player, reason)
 	return true
 end
 
@@ -429,7 +472,7 @@ local function updateSession(player, session, time)
 		session.lastMotionPosition = nil
 		return
 	end
-	humanoid.WalkSpeed = WALK_SPEED
+	humanoid.WalkSpeed = restrained(player) and 0 or WALK_SPEED
 	if not positionAllowed(root, session, time) then
 		-- Recomeça só a rota, nunca reinicia nem acrescenta tempo à pena original.
 		placeInPrison(player, session)
@@ -482,6 +525,7 @@ function PrisonService.init(remotes, civicSites, options)
 	Players.PlayerRemoving:Connect(function(player)
 		freeCell(player, sessions[player])
 		sessions[player] = nil -- prisão é estado da sessão, não é gravada no DataStore
+		PrisonOutfitService.restore(player)
 	end)
 	task.spawn(function()
 		while true do

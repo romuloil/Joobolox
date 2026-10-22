@@ -75,6 +75,7 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 			local torso = instance("Part"); torso.Name = "UpperTorso"; torso.CFrame = root.CFrame; torso.Parent = character
 			local humanoid = instance("Humanoid"); humanoid.Name = "Humanoid"; humanoid.Health = 100; humanoid.WalkSpeed = 16
 			humanoid.JumpPower, humanoid.JumpHeight = 50, 7.2; humanoid.Parent = character
+			rawset(humanoid,"TakeDamage",function(self,amount) self.Health=math.max(0,self.Health-amount) end)
 			local backpack = instance("Backpack")
 			local player = { Parent = Players, Name = "Player" .. id, DisplayName = "Player" .. id, UserId = id, Character = character, CharacterAdded = signal() }
 			function player:GetAttribute(name) return attributes[name] end
@@ -133,12 +134,21 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 		local sites = { dutyPrompts = {prompt(0)}, armoryPrompts = {prompt(10)}, reportPrompts = {prompt(20)}, controlPrompts = {prompt(30)},
 			patrolPrompts = {prompt(40),prompt(50)}, doors = {door}, trainingPrompt = prompt(60), trainingSpawn = trainingSpawn }
 		service.init({ UIUpdate = update, PoliceRequest = request }, { police = sites }, {
+			economyService = {
+				getMoney=function(p)return p:GetAttribute("Money")end,
+				spend=function(p,n)if p:GetAttribute("Money")<n then return false end;p:SetAttribute("Money",p:GetAttribute("Money")-n);return true end,
+				add=function(p,n)p:SetAttribute("Money",p:GetAttribute("Money")+n);return true end,
+			},
+			vehicleService = {ejectFromVehicle=function(p)local h=p.Character:FindFirstChildOfClass("Humanoid");if not h.SeatPart then return false end;h.SeatPart=nil;return true end,applyPoliceSlow=function(p,n)p:SetAttribute("TestSlowSeconds",n);return true end},
 			beforeStun = function(p)
 				stunPreparations += 1
 				p.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
 			end,
 			beforeDuty = function() preparation += 1; if failPreparation then error("expected test failure") end end,
 			prisonService = {
+				isDetained=function(p)return p:GetAttribute("Detained")==true end,
+				getDetentionReason=function(p)return p:GetAttribute("TestPrisonReason")end,
+				returnToCell=function(p)table.insert(captures,p);return true end,
 				getCellControls = function() return {cellState} end,
 				setCellDoor = function(id, open)
 					table.insert(cellOperations, {id=id,open=open})
@@ -198,8 +208,8 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 	check("gear requires armory proximity", not f.service.requestGear(f.player))
 	f.move(f.player, 10)
 	check("armory issues equipment", f.service.requestGear(f.player))
-	check("exactly four police tools issued", #f.player:FindFirstChildOfClass("Backpack"):GetChildren() == 4)
-	check("reissue refreshes instead of duplicating", f.service.requestGear(f.player) and #f.player:FindFirstChildOfClass("Backpack"):GetChildren() == 4)
+	check("all seven police tools issued", #f.player:FindFirstChildOfClass("Backpack"):GetChildren() == 7)
+	check("reissue refreshes instead of duplicating", f.service.requestGear(f.player) and #f.player:FindFirstChildOfClass("Backpack"):GetChildren() == 7)
 	f.move(f.player, 20)
 	check("valid report recorded", f.service.submitReport(f.player, {category="Seguranca"}))
 	check("rapid duplicate report refused", not f.service.submitReport(f.player, {category="Seguranca"}))
@@ -258,6 +268,10 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 	check("cuffs cannot pass through walls", not capture.service.capture(officer, suspect.UserId))
 	capture.advance(0.6)
 	check("valid stun and cuffs detain suspect", capture.service.capture(officer, suspect.UserId))
+	check("cuffs begin a delayed transfer", #capture.captures == 0 and suspect:GetAttribute("CuffedUntil") ~= nil)
+	capture.advance(9.8)
+	check("no transfer before ten seconds", #capture.captures == 0)
+	capture.advance(0.3)
 	check("captured suspect forwarded once", #capture.captures == 1 and suspect:GetAttribute("Detained") == true)
 	check("capture clears wanted state", suspect:GetAttribute("Wanted") == false)
 	check("capture clears jumping impairment", suspect.Character:FindFirstChildOfClass("Humanoid").JumpPower == 50 and suspect.Character:FindFirstChildOfClass("Humanoid").JumpHeight == 7.2)
@@ -326,5 +340,64 @@ return function(mockSource, configSource, rulesSource, serviceSource)
 	check("failed preparation refuses duty", not failed.service.join(failed.player))
 	check("failed preparation releases slot", failed.lastState(failed.player).count == 0 and not failed.player:GetAttribute("PoliceDuty"))
 	check("failed preparation emits diagnostic", #failed.warnings == 1)
+	local enforcement=fixture()
+	local cop= enforcement.player
+	local inmate=enforcement.addPlayer(2)
+	enforcement.service.join(cop);enforcement.service.requestGear(cop);enforcement.move(inmate,5)
+	inmate:SetAttribute("Detained",true)
+	check("free civilian cannot manufacture prison offense",not enforcement.service.registerPrisonOffense(cop,"Furto de cartão"))
+	check("innocent inmate remains innocent",not enforcement.service.isWanted(inmate))
+	check("prison offense authorizes response",enforcement.service.registerPrisonOffense(inmate,"Furto de cartão"))
+	check("first offense creates server bounty",inmate:GetAttribute("Bounty")==25)
+	enforcement.service.registerPrisonOffense(inmate,"Furto de cartão")
+	check("same offense never multiplies bounty",inmate:GetAttribute("Bounty")==25)
+	enforcement.equip(cop,"Taser");enforcement.hit(inmate)
+	check("taser can stun guilty inmate",enforcement.service.taser(cop,{direction=enforcement.m.Vector3.new(1,0,0)}))
+	enforcement.equip(cop,"Cuff")
+	check("guilty inmate enters custody",enforcement.service.capture(cop,inmate.UserId))
+	enforcement.advance(10.1)
+	check("internal recapture returns to same detention",#enforcement.captures==1 and inmate:GetAttribute("Detained"))
+	check("internal recapture pays no repeatable bounty",cop:GetAttribute("Money")==781)
+	check("internal recapture clears wanted",not enforcement.service.isWanted(inmate))
+	inmate:SetAttribute("Detained",false)
+	enforcement.service.handlePrisonRelease(inmate,true,"police_capture")
+	check("escape creates wanted state and bounty",enforcement.service.isWanted(inmate)and inmate:GetAttribute("Bounty")==75)
+	enforcement.equip(cop,"Taser");enforcement.hit(inmate);enforcement.service.taser(cop,{direction=enforcement.m.Vector3.new(1,0,0)})
+	enforcement.equip(cop,"Cuff");check("escapee captured",enforcement.service.capture(cop,inmate.UserId));enforcement.advance(10.1)
+	check("verified outside recapture pays exactly once",cop:GetAttribute("Money")==856)
+	enforcement.advance(1);enforcement.service.capture(cop,inmate.UserId)
+	check("repeated innocent capture penalizes instead of rewarding",cop:GetAttribute("Money")==831)
+
+	local misuse=fixture();local civilian=misuse.addPlayer(2);misuse.move(civilian,5)
+	misuse.service.join(misuse.player);misuse.service.requestGear(misuse.player);misuse.equip(misuse.player,"Cuff")
+	for _=1,3 do misuse.service.capture(misuse.player,civilian.UserId);misuse.advance(2.1) end
+	check("three innocent attempts terminate police duty",not misuse.player:GetAttribute("PoliceDuty"))
+	check("misconduct detains officer",misuse.player:GetAttribute("Detained")==true and #misuse.captures==1)
+	check("misconduct fines total seventy-five",misuse.player:GetAttribute("Money")==706)
+	check("innocent victim never detained",not civilian:GetAttribute("Detained"))
+
+	local weapons=fixture();local target=weapons.addPlayer(2);weapons.move(target,5)
+	weapons.service.join(weapons.player);weapons.service.requestGear(weapons.player);weapons.equip(weapons.player,"Pistol")
+	weapons.hit(target);weapons.service.pistol(weapons.player,{direction=weapons.m.Vector3.new(1,0,0)})
+	check("pistol never damages innocent",target.Character:FindFirstChildOfClass("Humanoid").Health==100)
+	weapons.service.markSuspect(target,"test",120);weapons.advance(1)
+	weapons.hit(target);weapons.service.pistol(weapons.player,{direction=weapons.m.Vector3.new(1,0,0)})
+	check("pistol applies configured damage to wanted target",target.Character:FindFirstChildOfClass("Humanoid").Health==82)
+	weapons.equip(weapons.player,"Cuff");target.Character:FindFirstChildOfClass("Humanoid").Health=0
+	check("dead target cannot be arrested",not weapons.service.capture(weapons.player,target.UserId))
+
+	local cancelled=fixture();local runner2=cancelled.addPlayer(2);cancelled.move(runner2,5)
+	cancelled.service.join(cancelled.player);cancelled.service.requestGear(cancelled.player);cancelled.service.markSuspect(runner2,"test",120)
+	cancelled.equip(cancelled.player,"Taser");cancelled.hit(runner2);cancelled.service.taser(cancelled.player,{direction=cancelled.m.Vector3.new(1,0,0)})
+	cancelled.equip(cancelled.player,"Cuff");cancelled.service.capture(cancelled.player,runner2.UserId)
+	cancelled.service.leave(cancelled.player);cancelled.advance(11)
+	check("officer leaving cancels pending transfer",#cancelled.captures==0 and runner2:GetAttribute("CuffedUntil")==nil)
+	check("cancelled custody restores movement",runner2.Character:FindFirstChildOfClass("Humanoid").WalkSpeed==16)
+	check("cancel does not erase the actual crime",cancelled.service.isWanted(runner2))
+
+	local testing=fixture();local testPrisoner=testing.addPlayer(2);testPrisoner:SetAttribute("Detained",true);testPrisoner:SetAttribute("TestPrisonReason","studio_test")
+	testing.service.registerPrisonOffense(testPrisoner,"Furto de cartão");testPrisoner:SetAttribute("Detained",false)
+	testing.service.handlePrisonRelease(testPrisoner,true,"studio_test")
+	check("Studio simulation never generates bounty",testPrisoner:GetAttribute("Bounty")==0)
 	print(("PASS PoliceService: %d lifecycle checks (mock services)"):format(checks))
 end

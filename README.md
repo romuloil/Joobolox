@@ -1,83 +1,75 @@
-# Little Life: Minha Cidade — Marco 5.3
+# Little Life: Minha Cidade — Marco 5.4
 
-Continuação do Marco 5.2: delegacia em lote aberto, posto afastado da fuga, moradores
-fixos, LXR Táxis e regras comuns de uniformes e veículos de trabalho.
+Prisão reorganizada com interiores acessíveis, roupa de custódia automática,
+atividades e novas funções policiais. A cidade, a LXR Táxis e os empregos do Marco
+5.3 continuam incluídos.
 
-## Downloads
+## Baixar e testar
 
-- [Jogo para abrir no Roblox Studio](https://github.com/romuloil/Joobolox/raw/refs/heads/entrega-marco5-3/entregas/Marco5_3/LittleLife_Marco5_3.rbxlx)
-- [Pacote com jogo, códigos e instruções](https://github.com/romuloil/Joobolox/raw/refs/heads/entrega-marco5-3/entregas/Marco5_3/LittleLife_Marco5_3_Pacote.zip)
+- [Baixar o jogo .rbxlx](https://github.com/romuloil/Joobolox/raw/refs/heads/entrega-marco5-4/entregas/Marco5_4/LittleLife_Marco5_4.rbxlx)
+- [Baixar jogo, códigos e instruções .zip](https://github.com/romuloil/Joobolox/raw/refs/heads/entrega-marco5-4/entregas/Marco5_4/LittleLife_Marco5_4_Pacote.zip)
 
-Abra o `.rbxlx` no Roblox Studio e use **Play / F5**. O cenário é construído ao iniciar.
-**M** abre o mapa, **B** controla a bike, **V** entra/sai de um carro próximo ou usa o
-carro pessoal. As interações usam **E** e têm botões equivalentes no celular.
+Abra o arquivo no **Roblox Studio → Arquivo → Abrir do arquivo** e pressione **Play / F5**.
+O cenário é construído quando o teste inicia; a cena pode aparecer vazia antes disso.
+O aplicativo Roblox Player não abre arquivos `.rbxlx` diretamente.
 
-## Cidade e locais novos
+**M** abre o mapa, **B** usa a bicicleta, **V** usa o carro. Interações locais usam
+**E** ou toque no celular. Para testar captura e furto de cartão, use o teste de
+servidor com dois jogadores no Studio; há um roteiro em `docs/TESTE_NO_STUDIO.md`.
 
-A delegacia fica de frente para a avenida norte, em terreno reservado entre os anéis,
-com fachada azul/branca, vidraças, vestiário e pátio de viaturas. A sede amarela da
-**LXR Táxis**, com identificação azul, fica junto da avenida sul, também em lote livre.
+## Prisão
 
-O posto foi deslocado: fica a cerca de **374 studs** do último ponto da fuga, com
-estrada própria e garagem de carro pessoal. A passagem técnica ficou mais larga e
-neutra, seguida de uma trilha mais discreta. O posto não fornece veículos de emprego.
-O Vortex é o carro pessoal já disponível no protótipo; não foi criado um sistema de
-compra ou coleção de veículos.
+- Base policial azul com faixas ciano, três pavimentos acessíveis, escadas, sala de
+  operações, comando, terminais e cobertura com heliponto cenográfico.
+- Pavilhão de visitas vermelho/branco com cadastro local, bancos e divisórias;
+  garagem coberta com três vagas e saídas livres para viaturas.
+- Dezesseis celas individuais fechadas, com roupa laranja automática ao ser preso.
+  A roupa civil é restaurada ao cumprir a pena ou concluir a fuga. Resetar conserva
+  a pena e reaplica o uniforme, inclusive após carregar a aparência do avatar.
+- Bloqueio inicial da cela de **5 segundos**, seguido de circulação pelo complexo.
+  A pena continua em **60 segundos**, configurável em `CivicConfig`.
+- Refeitório serve refeições (+10 de saúde, intervalo de 30 s), enfermaria oferece
+  atendimento (+25, intervalo de 45 s) e exercícios têm séries de 4 s. A saúde nunca
+  ultrapassa o máximo do personagem. Exercícios registram a série, sem dinheiro.
+- Segure E atrás de um policial para tentar pegar o cartão de acesso. O servidor
+  confere posição, direção, visibilidade e duração. O policial recebe aviso após
+  um segundo. Guarde ou retire o cartão na gaveta da sua própria cela.
+- Leitores liberam portas por alguns segundos e aguardam a passagem ficar livre
+  para fechar. Entrar em áreas restritas gera ocorrência mesmo por uma porta aberta.
 
-Oito moradores parados nas calçadas reutilizam o `NPCKit` existente. Use **Conversar**
-para ouvir dicas sobre a rua, o mapa e as profissões. Eles respeitam o limite de NPCs
-compartilhado com os demais sistemas.
+## Polícia
 
-## Uniformes e carros profissionais
+Retire uniforme no vestiário e equipamentos no arsenal, após entrar em plantão.
+O uniforme tem camisa azul, calça preta, gravata, distintivo e quepe. O kit inclui
+pistola, taser, algemas, barreira de pneus, lançador de água, lanterna e rádio.
+Uniformes, armas e viaturas permanecem vinculados ao emprego.
 
-A profissão é validada pelo servidor. Uniforme só sai do vestiário correspondente e
-veículo profissional só sai da garagem do emprego enquanto o jogador trabalha nele.
-Sair ou trocar de emprego recolhe o uniforme e o veículo vinculado. Não é possível
-ter duas profissões ao mesmo tempo.
+Taser/água imobilizam procurados; algemas de perto iniciam transferência de **10 s**.
+A pistola causa dano em procurados; alvos mortos não podem ser capturados. Civis e
+presos sem infração não recebem dano. Tentativas indevidas com algemas, taser ou
+pistola geram multa de até $25; três advertências encerram o plantão e levam à prisão.
 
-Há uniformes próprios de policial, taxista, pizzaiolo, atendente e entregador.
-As roupas originais do avatar são restauradas ao devolver o uniforme. Após morrer ou
-resetar, é necessário retirar a roupa novamente; o plantão policial/táxi é encerrado.
-Nas profissões antigas, o emprego pode continuar, como no marco anterior.
+Algemas também retiram procurados de veículos próximos. A barreira reduz por 8 s a
+velocidade do carro de um procurado que passa sobre ela. Informes, rondas, treino,
+rádio e painel de portas/celas continuam disponíveis.
 
-A LXR tem um sedã amarelo próprio, identificação azul, faixa xadrez e letreiro de táxi.
-A polícia tem viatura azul/branca com giroflex visual. Não há sirene de áudio nesta
-versão. **V não transporta um carro de trabalho até o jogador**: volte ao veículo ou
-à garagem da profissão. Motorista e carro são vinculados ao mesmo dono e profissão.
+Fuga e infrações são registradas no servidor. A recompensa só é paga uma vez após
+uma captura externa concluída; recaptura interna e simulação do Studio não pagam.
+O aviso aparece na interface dos jogadores. Valores e tempos são provisórios.
 
-## Trabalhar como taxista
-
-1. Vá à sede LXR e use **Trabalhar como taxista**. Há duas vagas no protótipo.
-2. Retire o uniforme no vestiário e o táxi na garagem externa.
-3. Saia do carro com V, volte ao balcão de despacho e aceite uma corrida.
-4. Retorne ao seu táxi e siga o destino laranja no mapa.
-5. Pare junto ao passageiro, permaneça ao volante e use **Embarcar passageiro**.
-6. Dirija ao destino, pare e use **Concluir corrida**. A viagem é validada pelo servidor
-   e paga uma vez. O bônus diário existente pode ser resgatado após uma corrida válida.
-7. Volte ao despacho para outra corrida. Há cancelamento e saída do turno na interface.
-
-São seis pontos de origem/destino. Corridas são de NPCs nesta etapa: não há chamada de
-táxi por outros jogadores, taxímetro comercial ou sistema de compra de frota.
-A remuneração é provisória e configurável em `TaxiConfig`.
-
-## Polícia e prisão
-
-O plantão, arsenal, informes, rádio, rondas, treino e controles continuam disponíveis.
-Retire o uniforme no vestiário e a viatura na garagem da delegacia ou da prisão.
-As 16 celas, lacre inicial de 15 s, pena de 60 s e rota de fuga seguem funcionando.
-Banco/assaltos completos ainda são uma etapa futura; não se prende um civil livremente.
-As simulações voluntárias de prisão/suspeito permanecem exclusivas do Studio.
-
-## Código e testes
+## Código e validação
 
 ```sh
-python3 tools/build_rbxlx.py src dist/LittleLife_Marco5_3.rbxlx
+python3 tools/build_rbxlx.py src dist/LittleLife_Marco5_4.rbxlx
+python3 tools/validate_luau.py --luau-dir /caminho/para/luau
 ```
 
-O gerador só precisa de Python 3. No Windows, use `python` se `python3` não existir.
-Os scripts seguem os caminhos do Roblox em `src/`. Confira `docs/TESTE_NO_STUDIO.md`,
-`docs/VALIDACAO.md` e `docs/REGISTRO_MARCO5_3.md`.
+O gerador precisa apenas de Python 3. No Windows, use `python` se necessário.
+Consulte `docs/VALIDACAO.md`, `docs/REGISTRO_MARCO5_4.md` e o roteiro de teste.
 
-Não houve execução do Roblox Studio no ambiente Linux. Testes automatizados verificam
-código e decisões com objetos simulados; aparência, física, rede e desempenho precisam
-ser conferidos no Studio, especialmente os sedãs, os uniformes e o passageiro sentado.
+O Roblox Studio não está disponível no ambiente Linux: os testes automatizados
+usam objetos simulados. Aparência, física, rede, celular e desempenho ainda precisam
+ser conferidos no Studio. As imagens enviadas serviram como referência para uma
+adaptação própria. O heliponto não fornece helicóptero; não há nova ala de segurança
+máxima, jetpack, resgate de algemas por amigos ou inventário de itens compráveis.
+As gavetas guardam somente o cartão durante a pena, sem persistência entre sessões.

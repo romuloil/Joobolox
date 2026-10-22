@@ -100,6 +100,12 @@ return function(mockSource, rulesSource, serviceSource)
 		m.load("GameConfig", "return {WalkSpeed=16, Remotes={UIUpdate='UIUpdate'}}")
 		m.load("CivicConfig", "return {SentenceSeconds=60, CellLockSeconds=15}")
 		m.load("PrisonRules", rulesSource)
+		local dressed, outfitCalls = {}, 0
+		m.load("PrisonOutfitService", "return {}", true)
+		m.registry.PrisonOutfitService = {
+			apply = function(p) dressed[p] = true; outfitCalls += 1; return true end,
+			restore = function(p) dressed[p] = nil end,
+		}
 		local service = m.load("PrisonService", serviceSource, true)
 		local messages = {}
 		local update = { FireClient = function(_, p, kind, data)
@@ -132,16 +138,20 @@ return function(mockSource, rulesSource, serviceSource)
 				})
 			end
 		end
-		local prepared = 0
+		local prepared, releases, returned = 0, {}, 0
 		service.init({ UIUpdate = update }, sites, { beforeDetain = function()
 			prepared += 1
 			if failPreparation then error("expected test failure") end
-		end })
+		end, afterRelease = function(p, escaped, reason)
+			table.insert(releases, { player = p, escaped = escaped, reason = reason, dressed = dressed[p] })
+		end, afterReturnToCell = function() returned += 1 end })
 		advance(0)
 		return {
 			service = service, sites = sites, player = player, advance = advance,
 			messages = messages, attributes = attributes, Players = Players, warnings = warnings,
 			prepared = function() return prepared end,
+			dressed = dressed, releases = releases, outfitCalls = function() return outfitCalls end,
+			returned = function() return returned end,
 			move = function(x, z) player.Character.HumanoidRootPart.Position = v.new(x, 4, z or 0) end,
 			addPlayer = function(id)
 				local p = makePlayer(id)
@@ -164,6 +174,7 @@ return function(mockSource, rulesSource, serviceSource)
 	end
 	check("detention succeeds", f.service.detain(f.player, "test"))
 	check("detention invokes integrations once", f.prepared() == 1)
+	check("detention dresses prisoner automatically", f.dressed[f.player] and f.outfitCalls() == 1)
 	check("detained state set", f.service.isDetained(f.player) and f.player:GetAttribute("Detained"))
 	check("60 second deadline recorded", f.player:GetAttribute("PrisonEndsAt") == 1060)
 	check("walk speed controlled in prison", f.player.Character.Humanoid.WalkSpeed == 16)
@@ -172,10 +183,13 @@ return function(mockSource, rulesSource, serviceSource)
 	f.respawn()
 	check("reset preserves detention", f.service.isDetained(f.player))
 	check("reset preserves deadline", f.player:GetAttribute("PrisonEndsAt") == 1060)
+	check("reset reapplies custody outfit", f.dressed[f.player] and f.outfitCalls() == 2)
 	f.advance(34.9)
 	check("cannot leave before 60 seconds", f.service.isDetained(f.player))
 	f.advance(0.4)
 	check("timer releases player", not f.service.isDetained(f.player))
+	check("release restores clothing before callback", not f.dressed[f.player] and #f.releases == 1 and not f.releases[1].dressed)
+	check("release callback includes original reason", f.releases[1].reason == "test" and not f.releases[1].escaped)
 	check("release removes HUD state", f.player:GetAttribute("Detained") == false and f.player:GetAttribute("PrisonEndsAt") == nil)
 	check("timer moves player outside", f.player.Character.HumanoidRootPart.Position.X == 120)
 	check("prior speed restored", f.player.Character.Humanoid.WalkSpeed == 24)
@@ -252,6 +266,7 @@ return function(mockSource, rulesSource, serviceSource)
 	local cells = fixture(true, false, 16)
 	check("cell detention succeeds", cells.service.detain(cells.player, "test"))
 	check("cell identifier replicated", cells.player:GetAttribute("PrisonCell") == "01")
+	check("assigned cell API is authoritative", cells.service.getAssignedCellId(cells.player) == "01")
 	check("cell unlock deadline replicated", cells.player:GetAttribute("PrisonCellOpensAt") == 1015)
 	check("assigned inmate moved inside own cell", cells.player.Character.HumanoidRootPart.Position.Z == 8)
 	check("cell gate initially closed", cells.sites.prisonCells[1].door.CFrame.Position.X == 6)
@@ -271,6 +286,7 @@ return function(mockSource, rulesSource, serviceSource)
 	check("reset keeps assigned cell", cells.player:GetAttribute("PrisonCell") == "01")
 	check("manual release frees cell", cells.service.release(cells.player, false))
 	check("release clears cell attributes", cells.player:GetAttribute("PrisonCell") == nil and cells.player:GetAttribute("PrisonCellOpensAt") == nil)
+	check("release clears assigned cell API", cells.service.getAssignedCellId(cells.player) == nil)
 	cells.advance(0.3)
 	check("empty cell gate closes again", cells.sites.prisonCells[1].door.CFrame.Position.X == 6)
 
@@ -305,6 +321,7 @@ return function(mockSource, rulesSource, serviceSource)
 	doorway.advance(15.3)
 	doorway.move(6, 8)
 	check("release near cell doorway succeeds", doorway.service.release(doorway.player, true))
+	check("escape restores civil outfit and reports escape", not doorway.dressed[doorway.player] and doorway.releases[1].escaped)
 	doorway.advance(0.6)
 	check("empty cell does not close onto living character", doorway.sites.prisonCells[1].door.CFrame.Position.X == 12)
 	local waiting = doorway.addPlayer(2)
@@ -343,6 +360,27 @@ return function(mockSource, rulesSource, serviceSource)
 	check("detention normalizes stunned movement", stunnedIntake.player.Character.Humanoid.WalkSpeed == 16)
 	stunnedIntake.advance(60.3)
 	check("release never restores a zero stunned walking speed", stunnedIntake.player.Character.Humanoid.WalkSpeed == 16)
+
+	local recaptured = fixture(true, false, 1)
+	check("free citizen has no assigned cell", recaptured.service.getAssignedCellId(recaptured.player) == nil)
+	check("free citizen cannot be returned to cell", not recaptured.service.returnToCell(recaptured.player))
+	recaptured.service.detain(recaptured.player, "test")
+	recaptured.advance(16)
+	recaptured.player:SetAttribute("StunnedUntil", 1020)
+	recaptured.move(2, 8)
+	recaptured.advance(0.3)
+	check("prison tick preserves stun movement", recaptured.player.Character.Humanoid.WalkSpeed == 0)
+	check("internal recapture returns assigned inmate", recaptured.service.returnToCell(recaptured.player))
+	check("internal recapture keeps same cell and notifies cleanup", recaptured.player.Character.HumanoidRootPart.Position.Z == 8 and recaptured.returned() == 1)
+	check("internal recapture preserves original deadlines", recaptured.player:GetAttribute("PrisonEndsAt") == 1060 and recaptured.player:GetAttribute("PrisonCellOpensAt") == 1015)
+	check("internal recapture keeps opened cell open", recaptured.sites.prisonCells[1].door:GetAttribute("Open"))
+	recaptured.advance(4)
+	check("movement returns after stun deadline", recaptured.player.Character.Humanoid.WalkSpeed == 16)
+	recaptured.player:SetAttribute("CuffedUntil", 1025)
+	recaptured.advance(0.3)
+	check("prison tick also respects cuff movement", recaptured.player.Character.Humanoid.WalkSpeed == 0)
+	recaptured.service.release(recaptured.player, false)
+	check("duplicate release produces no duplicate hook", not recaptured.service.release(recaptured.player, false) and #recaptured.releases == 1)
 
 	print(("PASS PrisonService: %d lifecycle checks (mock services)"):format(checks))
 end

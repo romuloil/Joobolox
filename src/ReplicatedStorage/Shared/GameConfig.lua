@@ -7,7 +7,7 @@ local GameConfig = {}
 
 GameConfig.GameName = "Little Life: Minha Cidade"
 GameConfig.CityName = "Little Little Kinder"
-GameConfig.Version = "Marco 5.3 — LXR Táxis e Profissões"
+GameConfig.Version = "Marco 5.4 — Vida na Prisão"
 
 -- Nomes oficiais (documento mestre, seção 5)
 GameConfig.Places = {

@@ -75,11 +75,12 @@ return function(mockSource)
   end)
   rawset(p,'GetPivot',function(self)return self.PrimaryPart and self.PrimaryPart.CFrame or self._props.Pivot or self.CFrame end)
   if class=='Humanoid'then
-   p.Health,p.WalkSpeed,p.JumpPower,p.JumpHeight,p.HipHeight=100,16,50,7.2,2
+   p.Health,p.MaxHealth,p.WalkSpeed,p.JumpPower,p.JumpHeight,p.HipHeight=100,100,16,50,7.2,2
    p.Died,p.Running=signal(),signal()
    p.Sit,p.PlatformStand=false,false
    rawset(p,'ChangeState',function()end);rawset(p,'SetStateEnabled',function()end)
-  elseif class=='ProximityPrompt'then p.Triggered=signal()
+  elseif class=='ProximityPrompt'then
+   p.Triggered,p.PromptButtonHoldBegan,p.PromptButtonHoldEnded=signal(),signal(),signal()
   elseif class=='Seat'or class=='VehicleSeat'then
    rawset(p,'Sit',function(self,humanoid)humanoid.Sit=true;humanoid.SeatPart=self;self.Occupant=humanoid end)
   elseif class=='Tool'then p.Activated,p.Equipped,p.Unequipped=signal(),signal(),signal()
@@ -108,14 +109,14 @@ return function(mockSource)
  local function character(r6)
   local c=instance('Model');c.Name='Character';c.Parent=m.Workspace
   local names=r6 and {'HumanoidRootPart','Head','Torso','Left Arm','Right Arm','Left Leg','Right Leg'}or
-   {'HumanoidRootPart','Head','UpperTorso','LowerTorso','LeftUpperArm','RightUpperArm','LeftUpperLeg','RightUpperLeg','LeftLowerLeg','RightLowerLeg','LeftFoot','RightFoot'}
+   {'HumanoidRootPart','Head','UpperTorso','LowerTorso','LeftUpperArm','RightUpperArm','LeftLowerArm','RightLowerArm','LeftHand','RightHand','LeftUpperLeg','RightUpperLeg','LeftLowerLeg','RightLowerLeg','LeftFoot','RightFoot'}
   for _,name in ipairs(names)do local p=instance('Part');p.Name=name;p.Size=m.Vector3.new(2,2,1);p.CFrame=m.CFrame.new(0,name=='Head'and 5.5 or 4,0);p.Parent=c end
   local h=instance('Humanoid');h.Name='Humanoid';h.RigType=r6 and m.Enum.HumanoidRigType.R6 or m.Enum.HumanoidRigType.R15;h.Parent=c
   c.PrimaryPart=c:FindFirstChild('HumanoidRootPart');return c
  end
  local function player(id,r6)
   local attrs,changes={},{}
-  local p={Parent=Players,Name='Player'..id,DisplayName='Player'..id,UserId=id,Character=character(r6),CharacterAdded=signal()}
+  local p={Parent=Players,Name='Player'..id,DisplayName='Player'..id,UserId=id,Character=character(r6),CharacterAdded=signal(),CharacterAppearanceLoaded=signal()}
   local backpack=instance('Backpack');backpack.Name='Backpack'
   function p:GetAttribute(name)return attrs[name]end
   function p:SetAttribute(name,value)local before=attrs[name];attrs[name]=value;if before~=value and changes[name]then changes[name]:Fire()end end

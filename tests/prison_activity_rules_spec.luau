@@ -1,0 +1,20 @@
+local Rules = require("../src/ReplicatedStorage/Shared/PrisonActivityRules")
+local Config = require("../src/ReplicatedStorage/Shared/PrisonActivityConfig")
+local count = 0
+local function check(v, name) count += 1; assert(v, name) end
+check(Rules.inRange(10, 10), "inclusive interaction range")
+for _, value in ipairs({-1, 11, math.huge, -math.huge, 0/0}) do check(not Rules.inRange(value,10), "reject invalid/far distance") end
+check(Rules.available(nil,100,30), "first meal allowed")
+check(not Rules.available(90,100,30), "meal cooldown")
+check(Rules.available(70,100,30), "meal cooldown boundary")
+check(not Rules.available(101,100,30), "future clock does not reopen")
+check(Rules.healedHealth(95,100,10)==100,"heal capped")
+check(Rules.healedHealth(70,100,10)==80,"small heal")
+check(Rules.healedHealth(0,100,25)==nil,"dead cannot heal")
+check(Rules.healedHealth(70,100,math.huge)==nil,"nonfinite heal denied")
+check(Rules.canPickpocket(4,1,1,Config),"behind facing officer")
+check(not Rules.canPickpocket(4,-1,1,Config),"front officer rejected")
+check(not Rules.canPickpocket(4,1,-1,Config),"facing away rejected")
+check(not Rules.canPickpocket(7,1,1,Config),"far rejected")
+check(not Rules.canPickpocket(4,0/0,1,Config),"nan rejected")
+print("PASS PrisonActivityRules: "..count.." checks")

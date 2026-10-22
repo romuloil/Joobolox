@@ -1,4 +1,4 @@
--- Polícia não letal: vagas, equipamentos, registros, acessos, ronda e treinamento.
+-- Polícia: equipamento, registros, abordagem, custódia e fiscalização no servidor.
 -- Captura depende de suspeita criada por outro serviço NO SERVIDOR e imobilização.
 -- Não há remoto que crie suspeitos, altere dinheiro ou prenda um civil livremente.
 local Players = game:GetService("Players")
@@ -20,6 +20,13 @@ local sites, hooks, ui
 local duty, suspects, stuns, training = {}, {}, {}, {}
 local reports, reportId = {}, 0
 local doors, count = {}, 0
+local pending, strips, misconduct = {}, {}, {}
+local cancelCustody, finishCustody
+local function removeStrip(player)
+	local strip = strips[player]
+	strips[player] = nil
+	if strip and strip.model then strip.model:Destroy() end
+end
 
 local function now() return Workspace:GetServerTimeNow() end
 local function notice(player, message)
@@ -117,7 +124,7 @@ end
 function PoliceService.join(player)
 	if not initialized or player.Parent ~= Players then return false end
 	if duty[player] then sendState(player); return true end
-	if suspects[player] then notice(player,"Resolva sua ocorrência antes de entrar em serviço.");return false end
+	if suspects[player] or pending[player] then notice(player,"Resolva sua ocorrência antes de entrar em serviço.");return false end
 	if not nearAny(player, sites.dutyPrompts) then notice(player, "Entre em serviço no balcão policial."); return false end
 	if not Rules.canJoin(rootOf(player) ~= nil, player:GetAttribute("Detained"), count, Config.Slots) then
 		notice(player, count >= Config.Slots and "As três vagas policiais estão ocupadas." or "Você não pode entrar em serviço agora.")
@@ -153,6 +160,10 @@ function PoliceService.leave(player, silent)
 	local record = duty[player]
 	if not record then return false end
 	duty[player] = nil
+	removeStrip(player)
+	for target, record in pairs(pending) do
+		if record.officer == player then cancelCustody(target, "O agente encerrou o plantão; custódia cancelada.") end
+	end
 	WorkRoleService.clear(player, "Policial")
 	count = math.max(0, count - 1)
 	player:SetAttribute("PoliceDuty", false)
@@ -186,7 +197,15 @@ local function makeTool(definition)
 	handle.Name, handle.Size, handle.Color = "Handle", Vector3.new(0.45, 1.1, 0.5), definition.color
 	handle.CanCollide, handle.CanTouch, handle.Massless = false, false, true
 	handle.Parent = tool
-	if definition.id == "Spray" then
+	if definition.id == "Pistol" or definition.id == "Taser" then
+		tool.Grip = CFrame.new(0, -0.15, 0.1)
+		decorativePart(tool, handle, "Corpo", Vector3.new(0.6,0.55,1.45), CFrame.new(0,0.55,-0.35), definition.color)
+		decorativePart(tool, handle, "Cano", Vector3.new(0.3,0.3,0.4), CFrame.new(0,0.55,-1.2), Color3.fromRGB(22,27,36))
+		decorativePart(tool, handle, "Mira", Vector3.new(0.15,0.12,0.15), CFrame.new(0,0.9,-0.6), Color3.fromRGB(110,190,220))
+	elseif definition.id == "Spike" then
+		handle.Size = Vector3.new(1.4,0.65,0.8)
+		for x=-1,1 do decorativePart(tool,handle,"Haste",Vector3.new(0.15,0.7,0.15),CFrame.new(x*0.45,0.5,0),Color3.fromRGB(195,205,210)) end
+	elseif definition.id == "Spray" then
 		tool.Grip = CFrame.new(0, -0.15, 0.1)
 		decorativePart(tool, handle, "ReservatórioÁgua", Vector3.new(0.9, 0.8, 1.8), CFrame.new(0, 0.45, -0.45), Color3.fromRGB(35, 150, 220))
 		decorativePart(tool, handle, "Bico", Vector3.new(0.5, 0.5, 1.1), CFrame.new(0, 0.45, -1.6), Color3.fromRGB(255, 175, 55))
@@ -215,7 +234,7 @@ function PoliceService.requestGear(player)
 	for _, definition in ipairs(Config.Gear) do makeTool(definition).Parent = backpack end
 	duty[player].equipped = true
 	sendState(player)
-	notice(player, "Kit recebido: lançador de água, algemas, lanterna e rádio.")
+	notice(player, "Kit recebido: pistola, taser, algemas, barreira, água, lanterna e rádio.")
 	return true
 end
 
@@ -223,6 +242,7 @@ function PoliceService.clearSuspect(player)
 	suspects[player] = nil
 	player:SetAttribute("Wanted", false)
 	player:SetAttribute("WantedReason", nil)
+	player:SetAttribute("Bounty", nil)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	local prompt = root and root:FindFirstChild("PoliceCuffPrompt")
 	if prompt then prompt:Destroy() end
@@ -236,16 +256,57 @@ local function cuffPrompt(root, action)
 	p.Triggered:Connect(action)
 	return p
 end
-function PoliceService.markSuspect(player, reason, duration)
-	if not initialized or player.Parent ~= Players or not rootOf(player) or player:GetAttribute("Detained")
-		or player:GetAttribute("InWorkZone") or duty[player] then return false end
-	duration = Rules.finite(duration) and math.clamp(duration, 5, Config.SuspectSeconds) or Config.SuspectSeconds
-	suspects[player] = { untilAt = now() + duration, reason = type(reason) == "string" and reason:sub(1,100) or "Ocorrência validada pelo servidor" }
+local function publishSuspect(player, record)
 	player:SetAttribute("Wanted", true)
-	player:SetAttribute("WantedReason", suspects[player].reason)
+	player:SetAttribute("WantedReason", record.reason)
+	player:SetAttribute("Bounty", record.bounty or 0)
 	local root = rootOf(player)
-	if not root:FindFirstChild("PoliceCuffPrompt") then cuffPrompt(root, function(officer) PoliceService.capture(officer, player.UserId) end) end
-	for officer in pairs(duty) do notice(officer, "Alerta: suspeito identificado. Use água para imobilizar antes de algemar.") end
+	if root and not root:FindFirstChild("PoliceCuffPrompt") then
+		cuffPrompt(root, function(officer) PoliceService.capture(officer, player.UserId) end)
+	end
+end
+local function setSuspect(player, reason, duration, prisonOffense, reward)
+	if not initialized or player.Parent ~= Players or not rootOf(player) or duty[player]
+		or player:GetAttribute("InWorkZone") or (player:GetAttribute("Detained") and not prisonOffense) then return false end
+	duration = Rules.finite(duration) and math.clamp(duration,5,Config.SuspectSeconds) or Config.SuspectSeconds
+	local previous = suspects[player]
+	local record = previous or { bounty = 0, offenses = {} }
+	record.untilAt = now()+duration
+	record.reason = type(reason)=="string" and reason:sub(1,100) or "Ocorrência validada pelo servidor"
+	record.prisonOffense = prisonOffense == true
+	if reward and Config.Bounty[reason] and not record.offenses[reason] then
+		record.offenses[reason] = true
+		record.bounty = math.min(Config.MaxBounty,record.bounty+Config.Bounty[reason])
+	end
+	suspects[player] = record
+	publishSuspect(player,record)
+	if not previous then
+		for officer in pairs(duty) do notice(officer,"Ocorrência registrada. Imobilize com água/taser e use algemas de perto.") end
+	end
+	return true
+end
+function PoliceService.markSuspect(player, reason, duration)
+	-- API de integração: não cria recompensa a partir de texto arbitrário ou teste.
+	return setSuspect(player,reason,duration,false,false)
+end
+function PoliceService.registerPrisonOffense(player, reason)
+	if not hooks or not hooks.prisonService.isDetained or not hooks.prisonService.isDetained(player)
+		or (reason~="Furto de cartão" and reason~="Área restrita") then return false end
+	local testing = hooks.prisonService.getDetentionReason
+		and hooks.prisonService.getDetentionReason(player) == "studio_test"
+	return setSuspect(player,reason,Config.SuspectSeconds,true,not testing)
+end
+function PoliceService.isOnDuty(player) return onDuty(player) end
+function PoliceService.isWanted(player)
+	local record=suspects[player]
+	return record~=nil and now()<record.untilAt
+end
+function PoliceService.handlePrisonRelease(player, escaped, reason)
+	if pending[player] then cancelCustody(player) end
+	if escaped then
+		return setSuspect(player,"Fuga da prisão",Config.SuspectSeconds,false,reason~="studio_test")
+	end
+	PoliceService.clearSuspect(player)
 	return true
 end
 
@@ -258,7 +319,7 @@ local function clearStun(player)
 		if not player:GetAttribute("Detained") then state.humanoid.WalkSpeed = state.speed end
 	end
 end
-local function stunPlayer(player)
+local function stunPlayer(player, seconds)
 	if hooks.beforeStun then
 		local ok,err=pcall(hooks.beforeStun,player)
 		if not ok then warn("[PoliceService] Falha ao preparar imobilização: "..tostring(err));return false end
@@ -269,13 +330,76 @@ local function stunPlayer(player)
 	if not state or state.humanoid ~= humanoid then
 		state = { humanoid = humanoid, speed = humanoid.WalkSpeed, jumpPower = humanoid.JumpPower, jumpHeight = humanoid.JumpHeight }
 	end
-	state.untilAt = now() + Config.StunSeconds
+	state.untilAt = now() + (seconds or Config.StunSeconds)
 	stuns[player] = state
 	humanoid.WalkSpeed, humanoid.JumpPower, humanoid.JumpHeight = 0, 0, 0
 	player:SetAttribute("StunnedUntil", state.untilAt)
-	notice(player, "Jato de água: você está imobilizado por alguns segundos.")
+	notice(player, "Você está imobilizado por alguns segundos.")
 	return true
 end
+local function misconductAttempt(officer)
+	if not Security.checkRate(officer,"PoliceMisconduct",2) then return end
+	misconduct[officer]=(misconduct[officer] or 0)+1
+	local economy=hooks.economyService
+	local balance=economy and economy.getMoney(officer)
+	local paid=0
+	if Rules.finite(balance) then
+		local amount=math.min(Config.InnocentFine,math.max(0,math.floor(balance)))
+		if amount>0 and economy.spend(officer,amount,"police_innocent_misuse") then paid=amount end
+	end
+	notice(officer,("Pessoa inocente: abordagem indevida. Multa $%d · advertência %d/%d."):format(paid,misconduct[officer],Config.MisconductLimit))
+	if misconduct[officer]>=Config.MisconductLimit then
+		misconduct[officer]=0
+		PoliceService.leave(officer,true)
+		hooks.prisonService.detain(officer,"police_misconduct")
+		notice(officer,"Plantão encerrado por abordagens indevidas repetidas.")
+	end
+end
+cancelCustody = function(target, message)
+	local record=pending[target]
+	if not record then return false end
+	pending[target]=nil
+	target:SetAttribute("CuffedUntil",nil)
+	clearStun(target)
+	if message then notice(target,message) end
+	return true
+end
+local function payBounty(officer, target, record)
+	local amount=record.bounty or 0
+	record.bounty=0 -- remove antes de chamar economia: nunca paga duas vezes
+	local economy=hooks.economyService
+	if amount>0 and economy and economy.add(officer,amount,"police_bounty") then
+		local message=("%s capturou %s e recebeu $%d de recompensa."):format(officer.DisplayName or officer.Name,target.DisplayName or target.Name,amount)
+		for _, recipient in ipairs(Players:GetPlayers()) do notice(recipient,message) end
+	end
+end
+finishCustody = function(target, record)
+	if pending[target]~=record then return end
+	if target.Parent~=Players or not onDuty(record.officer) or not rootOf(target)
+		or target.Character~=record.character or record.officer.Character~=record.officerCharacter then
+		cancelCustody(target,"Custódia interrompida.");return
+	end
+	pending[target]=nil
+	target:SetAttribute("CuffedUntil",nil)
+	local suspect=suspects[target]
+	local accepted
+	if target:GetAttribute("Detained") then
+		accepted=hooks.prisonService.returnToCell and hooks.prisonService.returnToCell(target)
+	else
+		accepted=hooks.prisonService.detain(target,"police_capture")
+	end
+	clearStun(target)
+	if not accepted then
+		notice(record.officer,"A prisão não recebeu a custódia. A pessoa foi desalgemada.")
+		return
+	end
+	PoliceService.clearSuspect(target)
+	misconduct[record.officer]=0
+	addReport(record.officer,"Captura","Custódia validada e encaminhada à cela.","Ocorrência em patrulha")
+	-- Retorno de quem já cumpre pena não rende recompensa: impede repetir furto/captura.
+	if not record.wasDetained and suspect then payBounty(record.officer,target,suspect) end
+end
+
 local function waterVisual(a, b)
 	if (b-a).Magnitude < 0.01 then return end
 	local p = Instance.new("Part")
@@ -285,16 +409,18 @@ local function waterVisual(a, b)
 	p.Parent = Workspace
 	Debris:AddItem(p, 0.15)
 end
-function PoliceService.spray(player, payload)
-	if not onDuty(player) or not equipped(player,"Spray") or type(payload) ~= "table"
-		or not Rules.validDirection(payload.direction) or not Security.checkRate(player,"PoliceSpray",Config.SprayCooldown) then return false end
+local function fireWeapon(player, payload, kind)
+	local range=kind=="Pistol" and Config.PistolRange or kind=="Taser" and Config.TaserRange or Config.SprayRange
+	local cooldown=kind=="Pistol" and Config.PistolCooldown or kind=="Taser" and Config.TaserCooldown or Config.SprayCooldown
+	if not onDuty(player) or not equipped(player,kind) or type(payload) ~= "table"
+		or not Rules.validDirection(payload.direction) or not Security.checkRate(player,"PoliceWeapon",cooldown) then return false end
 	local character, _, root = Security.getLivingCharacter(player)
 	local head = character:FindFirstChild("Head")
 	local origin = head and head.Position or root.Position + Vector3.new(0,1.5,0)
 	local direction = payload.direction.Unit
 	local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude; params.FilterDescendantsInstances = {character}; params.IgnoreWater = true
-	local hit = Workspace:Raycast(origin, direction * Config.SprayRange, params)
-	local hitPosition = hit and hit.Position or origin + direction * Config.SprayRange
+	local hit = Workspace:Raycast(origin, direction * range, params)
+	local hitPosition = hit and hit.Position or origin + direction * range
 	waterVisual(origin,hitPosition)
 	if not hit then return true end
 	local ancestor = hit.Instance
@@ -303,12 +429,19 @@ function PoliceService.spray(player, payload)
 			local targetPlayer = Players:GetPlayerFromCharacter(ancestor)
 			if targetPlayer then
 				local suspect = suspects[targetPlayer]
-				if suspect and now() < suspect.untilAt and not targetPlayer:GetAttribute("Detained")
-					and not targetPlayer:GetAttribute("InWorkZone") and targetPlayer ~= player then stunPlayer(targetPlayer) end
+				if targetPlayer==player or pending[targetPlayer] then return true end
+				if suspect and now()<suspect.untilAt and (not targetPlayer:GetAttribute("Detained") or suspect.prisonOffense)
+					and not targetPlayer:GetAttribute("InWorkZone") then
+					if kind=="Pistol" then
+						local _,humanoid=Security.getLivingCharacter(targetPlayer)
+						if humanoid then humanoid:TakeDamage(Config.PistolDamage) end
+					else stunPlayer(targetPlayer) end
+				elseif kind~="Spray" then misconductAttempt(player) end
 				return true
 			end
 			local record = training[player]
 			if record and ancestor == record.model then
+				if kind=="Pistol" then notice(player,"No treino de abordagem, use água ou taser.");return true end
 				record.stunnedUntil = now() + Config.StunSeconds
 				record.model:SetAttribute("StunnedUntil",record.stunnedUntil)
 				notice(player,"Alvo de treino imobilizado. Aproxime-se e equipe as algemas.")
@@ -317,6 +450,35 @@ function PoliceService.spray(player, payload)
 		end
 		ancestor = ancestor.Parent
 	end
+	return true
+end
+
+function PoliceService.spray(player,payload) return fireWeapon(player,payload,"Spray") end
+function PoliceService.taser(player,payload) return fireWeapon(player,payload,"Taser") end
+function PoliceService.pistol(player,payload) return fireWeapon(player,payload,"Pistol") end
+
+function PoliceService.deploySpike(player)
+	if not onDuty(player) or not equipped(player,"Spike") or not hooks.vehicleService
+		or not hooks.vehicleService.applyPoliceSlow or not Security.checkRate(player,"PoliceSpike",Config.SpikeCooldown) then return false end
+	local character,humanoid,root=Security.getLivingCharacter(player)
+	if humanoid.SeatPart or not Rules.point(root.Position) then return false end
+	local target=root.Position+root.CFrame.LookVector*6
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
+	if Workspace:Raycast(root.Position,target-root.Position,params) then return false end
+	local ground=Workspace:Raycast(target+Vector3.new(0,3,0),Vector3.new(0,-12,0),params)
+	if not ground or ground.Normal.Y<0.8 then return false end
+	removeStrip(player)
+	local model=Instance.new("Model");model.Name="BarreiraPolicial";model:SetAttribute("PoliceOwner",player.UserId)
+	local frame=CFrame.new(ground.Position+Vector3.new(0,0.25,0))*root.CFrame.Rotation
+	local base=Instance.new("Part");base.Name="Base";base.Size=Vector3.new(13,0.25,2)
+	base.CFrame=frame;base.Anchored=true;base.CanCollide=false;base.CanTouch=false;base.Color=Color3.fromRGB(40,47,55);base.Parent=model
+	for i=-5,5 do
+		local spike=Instance.new("Part");spike.Name="Haste";spike.Size=Vector3.new(0.18,0.5,0.18);spike.CFrame=frame*CFrame.new(i,0.35,0)
+		spike.Anchored=true;spike.CanCollide=false;spike.CanTouch=false;spike.CanQuery=false;spike.Color=Color3.fromRGB(210,215,220);spike.Parent=model
+	end
+	model.Parent=Workspace
+	strips[player]={model=model,frame=frame,untilAt=now()+Config.SpikeSeconds,hit={}}
+	notice(player,"Barreira posicionada por 40 s: reduz a velocidade de veículos de procurados.")
 	return true
 end
 
@@ -342,19 +504,32 @@ function PoliceService.capture(officer, targetId)
 	end
 	local target = targetPlayer(targetId)
 	local targetRoot = target and rootOf(target)
-	local suspect, stun = target and suspects[target], target and stuns[target]
-	if not targetRoot or target == officer then return false end
-	if not Rules.canCapture(true,true,(officerRoot.Position-targetRoot.Position).Magnitude,now(),stun and stun.untilAt,
-		suspect ~= nil and now() < suspect.untilAt,target:GetAttribute("Detained"),target:GetAttribute("InWorkZone")) then return false end
-	-- Visibilidade entre os jogadores impede algemar através de parede/grade.
-	local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude; params.FilterDescendantsInstances = {officer.Character,target.Character}
+	if not targetRoot or target==officer or pending[target] then return false end
+	local distance=(officerRoot.Position-targetRoot.Position).Magnitude
+	if not Rules.finite(distance) or distance>Config.CuffDistance then return false end
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={officer.Character,target.Character}
 	if Workspace:Raycast(officerRoot.Position,targetRoot.Position-officerRoot.Position,params) then return false end
-	suspects[target] = nil -- trava a captura antes de callbacks que possam ceder execução
-	local accepted = hooks.prisonService.detain(target,"police_capture")
-	if not accepted then suspects[target] = suspect; return false end
-	PoliceService.clearSuspect(target)
-	clearStun(target)
-	addReport(officer,"Captura","Suspeito imobilizado encaminhado à prisão.","Ocorrência em patrulha")
+	local suspect,stun=suspects[target],stuns[target]
+	if not suspect or now()>=suspect.untilAt then misconductAttempt(officer);return false end
+	if target:GetAttribute("InWorkZone") then return false end
+	local _,humanoid=Security.getLivingCharacter(target)
+	if humanoid.SeatPart then
+		if hooks.vehicleService and hooks.vehicleService.ejectFromVehicle and hooks.vehicleService.ejectFromVehicle(target) then
+			notice(officer,"Procurado retirado do veículo. Imobilize para algemar.");return true
+		end
+		return false
+	end
+	if not Rules.canCapture(true,true,distance,now(),stun and stun.untilAt,true,
+		target:GetAttribute("Detained"),false,suspect.prisonOffense) then return false end
+	local record={officer=officer,character=target.Character,officerCharacter=officer.Character,
+		wasDetained=target:GetAttribute("Detained")==true,untilAt=now()+Config.CustodySeconds}
+	pending[target]=record
+	stun.untilAt=record.untilAt
+	target:SetAttribute("StunnedUntil",record.untilAt)
+	target:SetAttribute("CuffedUntil",record.untilAt)
+	notice(target,"Algemado: transferência para a cela em 10 segundos.")
+	notice(officer,"Custódia iniciada. Transferência em 10 segundos.")
+	task.delay(Config.CustodySeconds,function() finishCustody(target,record) end)
 	return true
 end
 
@@ -385,7 +560,7 @@ function PoliceService.toggleDoor(player, id)
 			if tostring(cell.id)==cellId then
 				local accepted,reason=hooks.prisonService.setCellDoor(cellId,not cell.open)
 				if not accepted then
-					notice(player,reason=="locked" and "A cela permanece lacrada nos primeiros 15 segundos da pena."
+					notice(player,reason=="locked" and "A cela permanece lacrada nos primeiros 5 segundos da pena."
 						or reason=="blocked" and "Afaste-se da porta antes de fechar a cela." or "Não foi possível operar essa cela agora.")
 				end
 				ui:FireClient(player,"PolicePanel",{panel="control",doors=doorList()})
@@ -399,6 +574,7 @@ function PoliceService.toggleDoor(player, id)
 	if not near(player,door.prompt) and not nearAny(player,sites.controlPrompts) then return false end
 	if door.isOpen and doorwayOccupied(door) then notice(player,"Passagem ocupada. Aguarde antes de fechar."); return false end
 	door.busy = true
+	door.accessEpoch=(door.accessEpoch or 0)+1
 	door.isOpen = not door.isOpen
 	door.part:SetAttribute("Open",door.isOpen)
 	local tween = TweenService:Create(door.part,TweenInfo.new(Config.DoorSeconds),{CFrame=door.isOpen and door.open or door.closed})
@@ -457,6 +633,9 @@ local function onRequest(player, action, payload)
 		if payload==false then PoliceService.leave(player) elseif payload==true then PoliceService.join(player) end
 	elseif action=="Gear" then PoliceService.requestGear(player)
 	elseif action=="Spray" then PoliceService.spray(player,payload)
+	elseif action=="Taser" then PoliceService.taser(player,payload)
+	elseif action=="Pistol" then PoliceService.pistol(player,payload)
+	elseif action=="Spike" then PoliceService.deploySpike(player)
 	elseif action=="Cuff" then PoliceService.capture(player,payload)
 	elseif action=="Report" then PoliceService.submitReport(player,payload)
 	elseif action=="Door" then PoliceService.toggleDoor(player,payload)
@@ -485,7 +664,7 @@ function PoliceService.init(remotes,civicSites,options)
 	initialized=true
 	for _, door in ipairs(sites.doors or {}) do
 		doors[door.id]=door;door.isOpen=false;door.busy=false;door.part:SetAttribute("Open",false)
-		if door.prompt then registerPromptList({door.prompt},function(player) PoliceService.toggleDoor(player,door.id) end) end
+		if door.prompt and not door.keycard then registerPromptList({door.prompt},function(player) PoliceService.toggleDoor(player,door.id) end) end
 	end
 	registerPromptList(sites.dutyPrompts,function(player) showPanel(player,"duty") end)
 	registerPromptList(sites.armoryPrompts,function(player) showPanel(player,"armory") end)
@@ -514,10 +693,17 @@ function PoliceService.init(remotes,civicSites,options)
 	end
 	assert(remotes[GameConfig.Remotes.PoliceRequest],"PoliceRequest ausente").OnServerEvent:Connect(onRequest)
 	local function watchPlayer(player)
-		player.CharacterAdded:Connect(function()
-			-- Morrer/resetar devolve equipamentos e a vaga; não duplica o kit.
-			PoliceService.leave(player,true);PoliceService.clearSuspect(player);clearStun(player)
-			task.defer(function() if player.Parent==Players then sendState(player) end end)
+		player.CharacterAdded:Connect(function(character)
+			-- Reset devolve o kit e cancela custódia, mas não apaga ocorrência pendente.
+			PoliceService.leave(player,true);cancelCustody(player);clearStun(player)
+			task.spawn(function()
+				character:WaitForChild("HumanoidRootPart",10)
+				if player.Parent==Players and player.Character==character then
+					local record=suspects[player]
+					if record and now()<record.untilAt then publishSuspect(player,record) end
+					sendState(player)
+				end
+			end)
 		end)
 		player:GetAttributeChangedSignal("Detained"):Connect(function()
 			if player:GetAttribute("Detained") then PoliceService.leave(player,true) end
@@ -527,15 +713,32 @@ function PoliceService.init(remotes,civicSites,options)
 	Players.PlayerAdded:Connect(watchPlayer)
 	for _, player in ipairs(Players:GetPlayers()) do watchPlayer(player) end
 	Players.PlayerRemoving:Connect(function(player)
-		PoliceService.leave(player,true);PoliceService.clearSuspect(player);clearStun(player);removeTraining(player)
+		PoliceService.leave(player,true);cancelCustody(player);PoliceService.clearSuspect(player);clearStun(player);removeTraining(player);misconduct[player]=nil
 	end)
 	task.spawn(function()
 		while true do
 			local time=now()
-			for player,suspect in pairs(suspects) do if time>=suspect.untilAt then PoliceService.clearSuspect(player) end end
+			for player,suspect in pairs(suspects) do if time>=suspect.untilAt and not pending[player] then PoliceService.clearSuspect(player) end end
+			for target,record in pairs(pending) do
+				if not rootOf(target) or not onDuty(record.officer) then cancelCustody(target,"Custódia interrompida.") end
+			end
+			for officer,strip in pairs(strips) do
+				if time>=strip.untilAt or not onDuty(officer) then removeStrip(officer)
+				else
+					for target in pairs(suspects) do
+						local root=rootOf(target)
+						if root and PoliceService.isWanted(target) and not strip.hit[target] then
+							local point=strip.frame:PointToObjectSpace(root.Position)
+							if math.abs(point.X)<=9 and math.abs(point.Y)<=7 and math.abs(point.Z)<=5 then
+								if hooks.vehicleService.applyPoliceSlow(target,Config.SpikeSlowSeconds) then strip.hit[target]=true end
+							end
+						end
+					end
+				end
+			end
 			for player,stun in pairs(stuns) do
 				if time>=stun.untilAt or not rootOf(player) then clearStun(player)
-				elseif not player:GetAttribute("Detained") then stun.humanoid.WalkSpeed=0;stun.humanoid.JumpPower=0;stun.humanoid.JumpHeight=0 end
+				else stun.humanoid.WalkSpeed=0;stun.humanoid.JumpPower=0;stun.humanoid.JumpHeight=0 end
 			end
 			for player,record in pairs(training) do
 				if not duty[player] or time>=record.untilAt or not record.model.Parent then removeTraining(player);if player.Parent==Players then sendState(player) end

@@ -100,19 +100,25 @@ local function stepDrive(dt)
 	end
 	local throttle = seat.ThrottleFloat
 	local steer = seat.SteerFloat
+	local slowUntil = car:GetAttribute("PoliceSlowUntil")
+	local speedLimit = car:GetAttribute("PoliceSpeedLimit")
+	local slowed = type(slowUntil) == "number" and slowUntil > Workspace:GetServerTimeNow()
+		and type(speedLimit) == "number" and speedLimit > 0
+	local maxSpeed = slowed and math.min(spec.MaxSpeed, speedLimit) or spec.MaxSpeed
+	local reverseSpeed = slowed and math.min(spec.ReverseSpeed, speedLimit) or spec.ReverseSpeed
 
 	-- Velocidade: acelera, freia (tecla para trás andando para frente), dá ré e perde velocidade solto
 	if throttle > 0.05 then
 		if d.speed < 0 then
 			d.speed = approach(d.speed, 0, spec.Brake * dt)
 		else
-			d.speed = approach(d.speed, spec.MaxSpeed * throttle, spec.Acceleration * dt)
+			d.speed = approach(d.speed, maxSpeed * throttle, spec.Acceleration * dt)
 		end
 	elseif throttle < -0.05 then
 		if d.speed > 0 then
 			d.speed = approach(d.speed, 0, spec.Brake * dt)
 		else
-			d.speed = approach(d.speed, -spec.ReverseSpeed * -throttle, spec.Acceleration * 0.6 * dt)
+			d.speed = approach(d.speed, -reverseSpeed * -throttle, spec.Acceleration * 0.6 * dt)
 		end
 	else
 		d.speed = approach(d.speed, 0, spec.Drag * dt)
@@ -124,6 +130,7 @@ local function stepDrive(dt)
 	if math.abs(d.speed - real) > 12 then
 		d.speed = d.speed + (real - d.speed) * math.min(1, dt * 4)
 	end
+	if slowed then d.speed = math.clamp(d.speed, -reverseSpeed, maxSpeed) end
 
 	-- Curva: só vira andando; em ré o volante inverte, como num carro de verdade
 	local grip = math.clamp(math.abs(d.speed) / 18, 0, 1)
