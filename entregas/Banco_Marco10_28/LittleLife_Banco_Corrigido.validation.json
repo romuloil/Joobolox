@@ -1,0 +1,20 @@
+{
+  "input_name": "modeloprochat.rbxl",
+  "input_sha256": "d5471f6223a2472f45ea000d37d6a7b1b165911b83d1ec0644b6a742da7bb18e",
+  "output_name": "LittleLife_Banco_Corrigido.rbxl",
+  "output_sha256": "339227941557f2e3feca2881dfb2e3604fd926409ffbba830276d821b37d088b",
+  "instances": 3621,
+  "scripts": 101,
+  "compiled_scripts": 101,
+  "modified_scripts": [
+    "ServerScriptService/Services/BankService",
+    "ServerScriptService/Services/BankBuilder",
+    "StarterPlayer/StarterPlayerScripts/Controllers/BankController"
+  ],
+  "changed_chunks": 1,
+  "preserved_chunks": 1490,
+  "other_scripts_unchanged": 98,
+  "checks": "All other chunks byte-identical; all instance IDs, names and parents unchanged.",
+  "runtime_validation": "156 assertions in Luau against bank modules with Roblox service doubles. See TESTES.log.",
+  "limits": "Roblox Studio rendering, engine physics, live replication, mobile input and avatar/mesh asset loading need in-game verification."
+}

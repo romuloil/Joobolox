@@ -1,0 +1,157 @@
+PASS real BankBuilder constructs bank
+PASS badge is enabled on server
+PASS transformer interaction is on accessible external panel
+PASS interaction active: Pegar o crachá emprestado
+PASS interaction active: Cortar a energia
+PASS preparation is recorded for gang
+PASS interaction active: Anunciar o assalto
+PASS announcement without equipped gun is refused
+PASS missing gun explains what to do
+PASS interaction active: Anunciar o assalto
+PASS armed announcement starts heist
+PASS announcer receives prepared badge
+PASS power preparation delays police alarm
+PASS interaction active: Passar o crachá
+PASS badge unlocks restricted area
+PASS interaction active: Hackear o sistema
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS solo dual keys open basement gate
+PASS interaction active: Cortar os lasers
+PASS laser minigame disables lasers
+PASS interaction active: Montar a furadeira térmica
+PASS interaction active: Girar o volante
+PASS vault passage opens after drilling and wheel
+PASS continuous collision-free walking route into and out of vault
+PASS interaction active: Pegar maços de dinheiro
+PASS vault loot enters bag
+PASS interaction active: Plantar o C4
+PASS tunnel wall opens
+PASS interaction active: Subir pelo bueiro
+PASS tunnel exit reaches surface
+PASS no runtime warnings
+PASS interaction active: Vender o malote do banco
+PASS escape and fence pay once, clear bag
+PASS interaction active: Vender o malote do banco
+PASS fence refuses duplicate payout
+PASS heist closes after crew leaves
+PASS interaction active: Pegar o crachá emprestado
+PASS interaction active: Cortar a energia
+PASS bank and preparation work again after cooldown
+PASS no runtime warnings
+PASS interaction active: Anunciar o assalto
+PASS visitor gets gang requirement instead of a silent failure
+PASS cancelled hold cannot announce
+PASS distant announcement is rejected by server
+PASS interaction active: Anunciar o assalto
+PASS downed player cannot announce
+PASS interaction active: Anunciar o assalto
+PASS police cannot announce
+PASS interaction active: Pegar o crachá emprestado
+PASS badge works even when avatar creation fails
+PASS interaction active: Anunciar o assalto
+PASS equipped gun is recognized alongside another tool
+PASS vault cannot be opened before drill stage
+PASS interaction active: Passar o crachá
+PASS interaction active: Hackear o sistema
+PASS walking away cancels minigame completion
+PASS interaction active: Hackear o sistema
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS expired solo key does not unlock gate
+PASS interaction active: Girar a chave 1
+PASS expired key pair can be retried
+PASS interaction active: Abrir a saída de serviço
+PASS service exit stays open while player occupies doorway
+PASS service exit closes after player clears doorway
+PASS interaction active: Abrir a saída de serviço
+PASS interaction active: Abrir a saída de serviço
+PASS old close timer cannot cancel a renewed exit opening
+PASS no runtime warnings
+PASS interaction active: Anunciar o assalto
+PASS interaction active: Arrombar a porta
+PASS interaction active: Hackear o sistema
+PASS rival gang cannot advance another gang heist
+PASS interaction active: Hackear o sistema
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS same player cannot satisfy multiplayer dual control
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS two participants unlock dual control
+PASS no runtime warnings
+PASS interaction active: Pegar o crachá emprestado
+PASS interaction active: Anunciar o assalto
+PASS interaction active: Passar o crachá
+PASS interaction active: Hackear o sistema
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS interaction active: Cortar os lasers
+PASS interaction active: Montar a furadeira térmica
+PASS jam pauses drill and blocks premature opening
+PASS interaction active: Destravar a furadeira
+PASS interaction active: Girar o volante
+PASS drill recovers after jam minigame
+PASS no runtime warnings
+PASS interaction active: Pegar o crachá emprestado
+PASS interaction active: Anunciar o assalto
+PASS interaction active: Passar o crachá
+PASS interaction active: Hackear o sistema
+PASS interaction active: Girar a chave 1
+PASS interaction active: Girar a chave 2
+PASS interaction active: Cortar os lasers
+PASS interaction active: Montar a furadeira térmica
+PASS interaction active: Girar o volante
+PASS interaction active: Pegar maços de dinheiro
+PASS stubborn-door event closes the vault
+PASS interaction active: Puxar a alavanca
+PASS emergency lever releases trapped player
+PASS no runtime warnings
+PASS interaction active: Pegar o crachá emprestado
+PASS interaction active: Anunciar o assalto
+PASS slow NPC loading does not block initiation
+PASS no runtime warnings
+PASS bank also initializes with fallback vault
+PASS no runtime warnings
+PASS interaction active: Anunciar o assalto
+PASS interaction active: Arrombar a porta
+PASS interaction active: Hackear o sistema
+PASS interaction active: Anunciar o assalto
+PASS interaction active: Arrombar a porta
+PASS old minigame completion cannot advance a new robbery
+PASS no runtime warnings
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS interaction active: Pegar maços de dinheiro
+PASS bag respects its configured capacity
+PASS interaction active: Abrir cofrinho
+PASS full bag offers a swap
+PASS distant swap neither awards nor discards loot
+PASS interaction active: Abrir cofrinho
+PASS valid nearby swap keeps bag capacity
+PASS swap dialog cannot be accepted twice
+PASS no runtime warnings
+PASS actual BankController builds UI without runtime errors
+PASS initial status request waits for bootstrap listener
+PASS deferred status request fires
+PASS robber sees announcement
+PASS police client hides robbery prompts
+PASS downed client hides prompts
+PASS new player can request explanation without joining gang first
+PASS outside player sees forcing action, not unusable inside action
+PASS badge holder sees card reader instead of forcing prompt
+PASS inside opening becomes available on restricted side
+PASS server Enabled replication cannot bypass client role filter
+PASS preparation panel renders received status
+PASS no runtime warnings
+TOTAL 156 checks passed
