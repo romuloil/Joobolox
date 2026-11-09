@@ -1,0 +1,16 @@
+{
+  "base_sha256": "339227941557f2e3feca2881dfb2e3604fd926409ffbba830276d821b37d088b",
+  "output_sha256": "f9afb2b811fc9fc8d18e7c7fdd9e95fd6b1c207dc5783ecb10376c83bf2e48e8",
+  "changed_scripts": [
+    "ServerScriptService/Services/BankBuilder",
+    "ServerScriptService/Services/MapBuilder",
+    "ReplicatedStorage/Shared/CityRoads"
+  ],
+  "unchanged_scripts": 98,
+  "compiled": 101,
+  "instances_preserved": 3621,
+  "raw_chunks_preserved": 1490,
+  "bank_service_and_controller": "unchanged from delivered bank fix",
+  "validation": "54 district checks with real reused builders and controlled Roblox service doubles; 156 bank checks",
+  "studio_playtest": false
+}

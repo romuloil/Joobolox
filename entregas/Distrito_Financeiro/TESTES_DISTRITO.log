@@ -1,0 +1,85 @@
+PASS financial lots reserved without roads/bank overlap: 30
+PASS five distant mountain ranges fit available land
+PASS bank access and escape lot preserved 1
+PASS bank access and escape lot preserved 2
+PASS bank access and escape lot preserved 3
+PASS bank access and escape lot preserved 4
+PASS bank access and escape lot preserved 5
+PASS bank access and escape lot preserved 6
+PASS bank access and escape lot preserved 7
+PASS bank access and escape lot preserved 8
+PASS bank access and escape lot preserved 9
+PASS bank access and escape lot preserved 10
+PASS bank access and escape lot preserved 11
+PASS bank access and escape lot preserved 12
+PASS bank access and escape lot preserved 13
+PASS bank access and escape lot preserved 14
+PASS bank access and escape lot preserved 15
+PASS bank access and escape lot preserved 16
+PASS bank access and escape lot preserved 17
+PASS bank access and escape lot preserved 18
+PASS bank access and escape lot preserved 19
+PASS bank access and escape lot preserved 20
+PASS bank access and escape lot preserved 21
+PASS bank access and escape lot preserved 22
+PASS bank access and escape lot preserved 23
+PASS bank access and escape lot preserved 24
+PASS bank access and escape lot preserved 25
+PASS bank access and escape lot preserved 26
+PASS bank access and escape lot preserved 27
+PASS bank access and escape lot preserved 28
+PASS bank access and escape lot preserved 29
+PASS bank access and escape lot preserved 30
+PASS coastal reserve rejects future random buildings
+PASS five connected streets registered in map and GPS source
+PASS coastal road reuses existing south access
+PASS coastal reservation aligns with existing road endpoint
+PASS district builds with actual reused tower/housing/shop geometry
+PASS metropolis skyline includes at least six towers
+PASS reused towers include functional housing entrances
+PASS usable office and plaza seating
+PASS walk-in business interiors reuse original shop model
+PASS future coast reserve has no invisible collision barrier
+PASS no runtime warnings
+DISTRICT 30 lots, 8 towers, 12 services, 44 seats, 5 ranges; 43 checks
+LOT	servico	260	-1210.6	80	80
+LOT	servico	370	-1210.6	80	80
+LOT	praca	480	-1210.6	80	80
+LOT	servico	690	-1210.6	80	80
+LOT	servico	800	-1210.6	80	80
+LOT	estacionamento	910	-1210.6	80	80
+LOT	torre	260	-1420.6	80	80
+LOT	servico	370	-1420.6	80	80
+LOT	praca	480	-1420.6	80	80
+LOT	servico	690	-1420.6	80	80
+LOT	torre	800	-1420.6	80	80
+LOT	estacionamento	910	-1420.6	80	80
+LOT	torre	260	-1299.4	80	80
+LOT	servico	370	-1299.4	80	80
+LOT	praca	480	-1299.4	80	80
+LOT	servico	690	-1299.4	80	80
+LOT	torre	800	-1299.4	80	80
+LOT	estacionamento	910	-1299.4	80	80
+LOT	servico	260	-1640.6	80	80
+LOT	torre	370	-1640.6	80	80
+LOT	praca	480	-1640.6	80	80
+LOT	torre	690	-1640.6	80	80
+LOT	servico	800	-1640.6	80	80
+LOT	estacionamento	910	-1640.6	80	80
+LOT	servico	260	-1519.4	80	80
+LOT	torre	370	-1519.4	80	80
+LOT	praca	480	-1519.4	80	80
+LOT	torre	690	-1519.4	80	80
+LOT	servico	800	-1519.4	80	80
+LOT	estacionamento	910	-1519.4	80	80
+PASS GPS junctions and sidewalk gaps: Avenida dos Negócios
+PASS GPS junctions and sidewalk gaps: Alameda das Empresas
+PASS GPS junctions and sidewalk gaps: Rua da Praça Financeira
+PASS GPS junctions and sidewalk gaps: Rua dos Investidores
+PASS GPS junctions and sidewalk gaps: Rua das Conexões
+PASS five open parking lots with clear central driveway
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
