@@ -1,12 +1,11 @@
-# Little Life — Distrito Financeiro do Vale
+# Little Life — metrópole com banco preservado
 
-Nova entrega de 09/11/2026, com o banco corrigido preservado.
+**[Baixar o mapa completo em um arquivo (.rbxl)](https://github.com/romuloil/Joobolox/raw/refs/heads/metropole-banco-preservado/entregas/Metropole_Banco_Preservado/LittleLife_Metropole_Banco_Preservado.rbxl)**
 
-**[Baixar o mapa completo em um arquivo (.rbxl)](https://github.com/romuloil/Joobolox/raw/refs/heads/expansao-distrito-financeiro/entregas/Distrito_Financeiro/LittleLife_Distrito_Financeiro.rbxl)**
+Correção do conflito de terreno que fazia o banco desaparecer, mantendo sua posição. Base: novo upload do usuário de 09/11/2026.
 
-8 torres, 12 espaços comerciais visitáveis, 5 praças, 5 estacionamentos, 5 serras distantes e reserva para o futuro litoral. Reutiliza modelos e os sistemas existentes de moradia e assentos. Novas ruas registradas no mapa/GPS.
+48 lotes: 15 torres, 19 espaços comerciais, 7 praças, 7 estacionamentos; 10 ruas e jardins no perímetro do banco. Serras e reserva para o litoral mantidas.
 
-- [Guia e localização](entregas/Distrito_Financeiro/LEIA_PRIMEIRO.md)
-- [Fontes e testes](correcoes/distrito-financeiro)
+[Guia e explicação da correção](entregas/Metropole_Banco_Preservado/LEIA_PRIMEIRO.md) · [Código e testes](correcoes/metropole-v2/)
 
-Abra no Roblox Studio e pressione F5. Validação automatizada: 101 scripts compilados, 54 verificações do distrito e 156 do banco. A aparência, física e desempenho reais precisam ser conferidos no Studio.
+101 scripts compilados, 82 verificações da expansão e 156 do banco. Teste aparência, física e desempenho no Roblox Studio com F5.
