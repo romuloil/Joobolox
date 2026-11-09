@@ -1,0 +1,23 @@
+{
+  "base_sha256": "3aa1a08873b95bacbcb0411f830b260d803144b89e398c5d381a1dd495b34388",
+  "output_sha256": "69229da83a262d6fbfc5e480b1ff8665c102aae3e77ecac721b4f94474a85dbe",
+  "original_instances_preserved": 3627,
+  "original_scripts_unchanged": 94,
+  "changed_scripts": [
+    "ServerScriptService/Services/BankBuilder",
+    "ServerScriptService/Services/MapBuilder",
+    "ReplicatedStorage/Shared/CityRoads",
+    "ServerScriptService/Services/VehicleService",
+    "StarterPlayer/StarterPlayerScripts/Controllers/GarageController",
+    "ServerScriptService/Services/PlayerDataService",
+    "StarterPlayer/StarterPlayerScripts/Controllers/MapController"
+  ],
+  "imported_physical_instances": 8618,
+  "imported_source_scripts": 0,
+  "new_modules": [
+    "DealershipBuilder"
+  ],
+  "compiled_scripts": 102,
+  "bank_service_controller_unchanged": true,
+  "studio_playtest": false
+}

@@ -1,0 +1,218 @@
+PASS REGRESSION: actual BankBuilder.plan accepts the original bank lot with all road reservations
+PASS original bank position is unchanged
+PASS complete dealership site fits without existing roads/bank/park overlap
+PASS all 48 previous lots keep their planning order
+PASS financial lots reserved without roads/bank overlap: 88
+PASS five distant mountain ranges fit available land
+PASS bank access and escape lot preserved 1
+PASS bank access and escape lot preserved 2
+PASS bank access and escape lot preserved 3
+PASS bank access and escape lot preserved 4
+PASS bank access and escape lot preserved 5
+PASS bank access and escape lot preserved 6
+PASS bank access and escape lot preserved 7
+PASS bank access and escape lot preserved 8
+PASS bank access and escape lot preserved 9
+PASS bank access and escape lot preserved 10
+PASS bank access and escape lot preserved 11
+PASS bank access and escape lot preserved 12
+PASS bank access and escape lot preserved 13
+PASS bank access and escape lot preserved 14
+PASS bank access and escape lot preserved 15
+PASS bank access and escape lot preserved 16
+PASS bank access and escape lot preserved 17
+PASS bank access and escape lot preserved 18
+PASS bank access and escape lot preserved 19
+PASS bank access and escape lot preserved 20
+PASS bank access and escape lot preserved 21
+PASS bank access and escape lot preserved 22
+PASS bank access and escape lot preserved 23
+PASS bank access and escape lot preserved 24
+PASS bank access and escape lot preserved 25
+PASS bank access and escape lot preserved 26
+PASS bank access and escape lot preserved 27
+PASS bank access and escape lot preserved 28
+PASS bank access and escape lot preserved 29
+PASS bank access and escape lot preserved 30
+PASS bank access and escape lot preserved 31
+PASS bank access and escape lot preserved 32
+PASS bank access and escape lot preserved 33
+PASS bank access and escape lot preserved 34
+PASS bank access and escape lot preserved 35
+PASS bank access and escape lot preserved 36
+PASS bank access and escape lot preserved 37
+PASS bank access and escape lot preserved 38
+PASS bank access and escape lot preserved 39
+PASS bank access and escape lot preserved 40
+PASS bank access and escape lot preserved 41
+PASS bank access and escape lot preserved 42
+PASS bank access and escape lot preserved 43
+PASS bank access and escape lot preserved 44
+PASS bank access and escape lot preserved 45
+PASS bank access and escape lot preserved 46
+PASS bank access and escape lot preserved 47
+PASS bank access and escape lot preserved 48
+PASS bank access and escape lot preserved 49
+PASS bank access and escape lot preserved 50
+PASS bank access and escape lot preserved 51
+PASS bank access and escape lot preserved 52
+PASS bank access and escape lot preserved 53
+PASS bank access and escape lot preserved 54
+PASS bank access and escape lot preserved 55
+PASS bank access and escape lot preserved 56
+PASS bank access and escape lot preserved 57
+PASS bank access and escape lot preserved 58
+PASS bank access and escape lot preserved 59
+PASS bank access and escape lot preserved 60
+PASS bank access and escape lot preserved 61
+PASS bank access and escape lot preserved 62
+PASS bank access and escape lot preserved 63
+PASS bank access and escape lot preserved 64
+PASS bank access and escape lot preserved 65
+PASS bank access and escape lot preserved 66
+PASS bank access and escape lot preserved 67
+PASS bank access and escape lot preserved 68
+PASS bank access and escape lot preserved 69
+PASS bank access and escape lot preserved 70
+PASS bank access and escape lot preserved 71
+PASS bank access and escape lot preserved 72
+PASS bank access and escape lot preserved 73
+PASS bank access and escape lot preserved 74
+PASS bank access and escape lot preserved 75
+PASS bank access and escape lot preserved 76
+PASS bank access and escape lot preserved 77
+PASS bank access and escape lot preserved 78
+PASS bank access and escape lot preserved 79
+PASS bank access and escape lot preserved 80
+PASS bank access and escape lot preserved 81
+PASS bank access and escape lot preserved 82
+PASS bank access and escape lot preserved 83
+PASS bank access and escape lot preserved 84
+PASS bank access and escape lot preserved 85
+PASS bank access and escape lot preserved 86
+PASS bank access and escape lot preserved 87
+PASS bank access and escape lot preserved 88
+PASS coastal reserve rejects future random buildings
+PASS fourteen connected streets registered in map and GPS source
+PASS coastal road reuses existing south access
+PASS coastal reservation aligns with existing road endpoint
+PASS bank building, announcement and vault exist alongside district
+PASS district builds with actual reused tower/housing/shop geometry
+PASS metropolis skyline includes at least six towers
+PASS reused towers include functional housing entrances
+PASS usable office and plaza seating
+PASS walk-in business interiors reuse original shop model
+PASS future coast reserve has no invisible collision barrier
+PASS bank perimeter receives new landscaping outside its reserved lot
+PASS old widened avenue reservation overlaps bank lot (root cause reproduced)
+PASS no runtime warnings
+DISTRICT 88 lots, 41 towers, 33 services, 94 seats, 5 ranges; 108 checks
+LOT	servico	260	-1210.6	80	80
+LOT	servico	370	-1210.6	80	80
+LOT	praca	480	-1210.6	80	80
+LOT	servico	690	-1210.6	80	80
+LOT	servico	800	-1210.6	80	80
+LOT	estacionamento	910	-1210.6	80	80
+LOT	torre	260	-1420.6	80	80
+LOT	servico	370	-1420.6	80	80
+LOT	praca	480	-1420.6	80	80
+LOT	servico	690	-1420.6	80	80
+LOT	torre	800	-1420.6	80	80
+LOT	estacionamento	910	-1420.6	80	80
+LOT	torre	260	-1299.4	80	80
+LOT	servico	370	-1299.4	80	80
+LOT	praca	480	-1299.4	80	80
+LOT	servico	690	-1299.4	80	80
+LOT	torre	800	-1299.4	80	80
+LOT	estacionamento	910	-1299.4	80	80
+LOT	servico	260	-1640.6	80	80
+LOT	torre	370	-1640.6	80	80
+LOT	praca	480	-1640.6	80	80
+LOT	torre	690	-1640.6	80	80
+LOT	servico	800	-1640.6	80	80
+LOT	estacionamento	910	-1640.6	80	80
+LOT	servico	260	-1519.4	80	80
+LOT	torre	370	-1519.4	80	80
+LOT	praca	480	-1519.4	80	80
+LOT	torre	690	-1519.4	80	80
+LOT	servico	800	-1519.4	80	80
+LOT	estacionamento	910	-1519.4	80	80
+LOT	torre	260	-1878.6	80	80
+LOT	servico	370	-1878.6	80	80
+LOT	praca	480	-1878.6	80	80
+LOT	servico	690	-1878.6	80	80
+LOT	torre	800	-1878.6	80	80
+LOT	estacionamento	910	-1878.6	80	80
+LOT	servico	260	-2080.6	80	80
+LOT	torre	370	-2080.6	80	80
+LOT	praca	480	-2080.6	80	80
+LOT	torre	690	-2080.6	80	80
+LOT	servico	800	-2080.6	80	80
+LOT	estacionamento	910	-2080.6	80	80
+LOT	torre	240.6	-1085	80	80
+LOT	servico	240.6	-975	80	80
+LOT	torre	119.4	-1085	80	80
+LOT	servico	119.4	-975	80	80
+LOT	servico	119.4	-865	80	80
+LOT	torre	730.6	-1085	80	80
+LOT	servico	119.4	-1215	80	80
+LOT	torre	119.4	-1309	80	80
+LOT	torre	119.4	-1403	80	80
+LOT	servico	119.4	-1497	80	80
+LOT	torre	119.4	-1591	80	80
+LOT	torre	119.4	-1685	80	80
+LOT	servico	119.4	-1779	80	80
+LOT	torre	119.4	-1873	80	80
+LOT	torre	119.4	-1967	80	80
+LOT	servico	1100.6	-1779	80	80
+LOT	torre	1100.6	-1873	80	80
+LOT	torre	1100.6	-1967	80	80
+LOT	servico	245	-2300.6	80	80
+LOT	torre	339	-2300.6	80	80
+LOT	torre	433	-2300.6	80	80
+LOT	servico	527	-2300.6	80	80
+LOT	torre	621	-2300.6	80	80
+LOT	torre	715	-2300.6	80	80
+LOT	servico	809	-2300.6	80	80
+LOT	torre	903	-2300.6	80	80
+LOT	torre	997	-2300.6	80	80
+LOT	servico	1091	-2300.6	80	80
+LOT	torre	1185	-2300.6	80	80
+LOT	torre	245	-2179.4	80	80
+LOT	servico	339	-2179.4	80	80
+LOT	torre	433	-2179.4	80	80
+LOT	torre	527	-2179.4	80	80
+LOT	servico	715	-2179.4	80	80
+LOT	torre	809	-2179.4	80	80
+LOT	torre	903	-2179.4	80	80
+LOT	servico	1185	-2179.4	80	80
+LOT	torre	1279	-2179.4	80	80
+LOT	torre	1373	-2179.4	80	80
+LOT	servico	1467	-2179.4	80	80
+LOT	torre	1561	-2179.4	80	80
+LOT	torre	1655	-2179.4	80	80
+LOT	servico	119.4	-2085	80	80
+LOT	torre	119.4	-2179	80	80
+LOT	torre	1100.6	-2085	80	80
+LOT	servico	1100.6	-2179	80	80
+PASS GPS junctions and sidewalk gaps: Avenida dos Negócios
+PASS GPS junctions and sidewalk gaps: Alameda das Empresas
+PASS GPS junctions and sidewalk gaps: Rua da Praça Financeira
+PASS GPS junctions and sidewalk gaps: Rua dos Investidores
+PASS GPS junctions and sidewalk gaps: Rua das Conexões
+PASS GPS junctions and sidewalk gaps: Boulevard Metropolitano
+PASS GPS junctions and sidewalk gaps: Avenida das Torres
+PASS GPS junctions and sidewalk gaps: Rua do Banco Oeste
+PASS GPS junctions and sidewalk gaps: Rua do Jardim do Banco
+PASS GPS junctions and sidewalk gaps: Rua do Banco Leste
+PASS GPS junctions and sidewalk gaps: Avenida da Concessionária
+PASS GPS junctions and sidewalk gaps: Rua da Praça Norte
+PASS GPS junctions and sidewalk gaps: Rua dos Investidores Norte
+PASS GPS junctions and sidewalk gaps: Rua das Conexões Norte
+PASS open parking lots with clear central driveway: 7
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+PASS mountains remain distant from bank district
+TOTAL DISTRICT	128	LANDSCAPING	3

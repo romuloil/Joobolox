@@ -1,0 +1,16 @@
+PASS full physical subtree imported with all furniture, interior, exterior and parking objects
+PASS actual builder includes the complete showroom and open parking
+PASS all original physical parts remain anchored after placement
+PASS ten interior doors and six workshop gates have local interactions
+PASS three Little Life vehicles displayed outside without replacing reference furniture
+PASS all transformed geometry stays inside the reserved dealership lot
+PASS import keeps original full scale and levels the floor
+PASS sales counter and owned-car collection garage are distinct
+PASS sales prompt sits at original interior front desk
+PASS both counters share three invisible nonblocking pickup positions
+PASS door rejects a forged activation from far away
+PASS nearby E activation opens original door geometry
+PASS door cooldown prevents overlapping animations
+PASS door can be closed again
+PASS no runtime warnings
+TOTAL DEALERSHIP	15	PARTS	6044

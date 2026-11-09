@@ -1,0 +1,41 @@
+{
+  "source_filename": "-- LEAKED BY Prod.Se7eN.rbxl",
+  "source_sha256": "ab46d879bf644bc0b949a7f524ce8e9de6cadc6acc46689d6444b7c40f2e2007",
+  "source_model": "Workspace/Map/Model/XOXO./Dealership (Dealer + ParkingLot)",
+  "template_sha256": "d56e7c01ea5df58d3e7482e5d6925ed30bf08648d9edbbd6b0e0cc933da363f8",
+  "physical_instances": 8618,
+  "base_parts": 6012,
+  "reference_scripts_imported": 0,
+  "scale": 1,
+  "placement_origin": [
+    1600,
+    1.33,
+    -3000
+  ],
+  "reserved_center": [
+    1576,
+    0,
+    -2941
+  ],
+  "reserved_size": [
+    520,
+    1340
+  ],
+  "foreign_code_removed": [
+    "Script",
+    "LocalScript",
+    "ModuleScript",
+    "ProximityPrompt",
+    "ClickDetector",
+    "TouchTransmitter"
+  ],
+  "original_property_payloads": "visual/mesh/texture properties preserved via rbx_binary 3.0.1; all physical parts anchored; original model source rotation leveled by a rigid CFrame transform",
+  "runtime_tests": {
+    "district": 128,
+    "bank": 156,
+    "vehicles": 29,
+    "dealership": 15
+  },
+  "independent_decode_instances": 12246,
+  "roblox_studio_available": false
+}
