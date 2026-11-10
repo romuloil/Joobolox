@@ -1,11 +1,12 @@
-# Little Life — litoral e concessionária compacta
+# Little Life — distrito restaurado e comunidades reformadas
 
-[**Baixar o mapa completo atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/litoral-concessionaria/entregas/Litoral_Concessionaria/LittleLife_Litoral_Concessionaria.rbxl)
+[**Baixar o mapa atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/distrito-comunidades-v5/entregas/Distrito_Comunidades/LittleLife_Atual_Distrito_Comunidades.rbxl)
 
-Abra no Roblox Studio e pressione **F5**. A concessionária mantém o prédio e o interior, com estacionamento menor e acesso mais próximo da avenida. O litoral continua a LK-102 com três praias, turistas, quiosques, carrinhos de picolé, guarda-sóis e retorno para a ponte futura. A ponte ainda não foi construída. Banco e distrito de 88 lotes preservados.
+Baseado no **atual.rbxl** enviado pelo usuário. Mantém litoral, concessionária e sistemas atuais; restaura o distrito ao redor do banco e reforma as três comunidades com relevo, vielas, escadarias e casas variadas. Inclui 18 casas opcionais à venda para membros das gangues, usando o sistema de moradia existente.
 
-- [Guia de teste e novidades](entregas/Litoral_Concessionaria/LEIA_PRIMEIRO.md)
-- [Planta esquemática do litoral](entregas/Litoral_Concessionaria/PLANTA_LITORAL.png)
-- [Código e testes](correcoes/litoral-v4/README.md)
+Abra no Roblox Studio e pressione **F5**.
 
-395 verificações automatizadas e 104 scripts compilados. Renderização, natação, física, streaming e desempenho ainda precisam ser conferidos no Roblox Studio.
+- [Guia e roteiro de teste](entregas/Distrito_Comunidades/LEIA_PRIMEIRO.md)
+- [Código e testes](correcoes/comunidades-v5/README.md)
+
+148 verificações automatizadas, 158 scripts compilados e leitura independente do arquivo binário. O teste visual, a física e o DataStore real ainda precisam ser conferidos no Roblox Studio.

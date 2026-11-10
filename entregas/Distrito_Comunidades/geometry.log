@@ -1,0 +1,207 @@
+PASS	three original community sites retained
+PASS	community build has no swallowed errors
+PASS	all 90 existing free gang homes retained: 90
+PASS	18 optional purchasable homes built
+PASS	housing entry Casa 10001
+PASS	housing entry Casa 10002
+PASS	housing entry Casa 10003
+PASS	housing entry Casa 10004
+PASS	housing entry Casa 10005
+PASS	housing entry Casa 10006
+PASS	housing entry Casa 10007
+PASS	housing entry Casa 10008
+PASS	housing entry Casa 10009
+PASS	housing entry Casa 10010
+PASS	housing entry Casa 10011
+PASS	housing entry Casa 10012
+PASS	housing entry Casa 10013
+PASS	housing entry Casa 10014
+PASS	housing entry Casa 10015
+PASS	housing entry Casa 10016
+PASS	housing entry Casa 10017
+PASS	housing entry Casa 10018
+PASS	housing entry Casa 10019
+PASS	housing entry Casa 10020
+PASS	housing entry Casa 10021
+PASS	housing entry Casa 10022
+PASS	housing entry Casa 10023
+PASS	housing entry Casa 10024
+PASS	housing entry Casa 10025
+PASS	housing entry Casa 10026
+PASS	housing entry Casa 10027
+PASS	housing entry Casa 10028
+PASS	housing entry Casa 10029
+PASS	housing entry Casa 10030
+PASS	housing entry Casa 10031
+PASS	housing entry Casa 10032
+PASS	housing entry Casa 10033
+PASS	housing entry Casa 10034
+PASS	housing entry Casa 10035
+PASS	housing entry Casa 10036
+PASS	housing entry Casa 10037
+PASS	housing entry Casa 10038
+PASS	housing entry Casa 10039
+PASS	housing entry Casa 10040
+PASS	housing entry Casa 10041
+PASS	housing entry Casa 10042
+PASS	housing entry Casa 10043
+PASS	housing entry Casa 10044
+PASS	housing entry Casa 10045
+PASS	housing entry Casa 10046
+PASS	housing entry Casa 10047
+PASS	housing entry Casa 10048
+PASS	housing entry Casa 10049
+PASS	housing entry Casa 10050
+PASS	housing entry Casa 10051
+PASS	housing entry Casa 10052
+PASS	housing entry Casa 10053
+PASS	housing entry Casa 10054
+PASS	housing entry Casa 10055
+PASS	housing entry Casa 10056
+PASS	housing entry Casa 10057
+PASS	housing entry Casa 10058
+PASS	housing entry Casa 10059
+PASS	housing entry Casa 10060
+PASS	housing entry Casa 10061
+PASS	housing entry Casa 10062
+PASS	housing entry Casa 10063
+PASS	housing entry Casa 10064
+PASS	housing entry Casa 10065
+PASS	housing entry Casa 10066
+PASS	housing entry Casa 10067
+PASS	housing entry Casa 10068
+PASS	housing entry Casa 10069
+PASS	housing entry Casa 10070
+PASS	housing entry Casa 10071
+PASS	housing entry Casa 10072
+PASS	housing entry Casa 10073
+PASS	housing entry Casa 10074
+PASS	housing entry Casa 10075
+PASS	housing entry Casa 10076
+PASS	housing entry Casa 10077
+PASS	housing entry Casa 10078
+PASS	housing entry Casa 10079
+PASS	housing entry Casa 10080
+PASS	housing entry Casa 10081
+PASS	housing entry Casa 10082
+PASS	housing entry Casa 10083
+PASS	housing entry Casa 10084
+PASS	housing entry Casa 10085
+PASS	housing entry Casa 10086
+PASS	housing entry Casa 10087
+PASS	housing entry Casa 10088
+PASS	housing entry Casa 10089
+PASS	housing entry Casa 10090
+PASS	housing entry Casa 10091
+PASS	housing entry Casa 10092
+PASS	housing entry Casa 10093
+PASS	housing entry Casa 10094
+PASS	housing entry Casa 10095
+PASS	housing entry Casa 10096
+PASS	housing entry Casa 10097
+PASS	housing entry Casa 10098
+PASS	housing entry Casa 10099
+PASS	housing entry Casa 10100
+PASS	housing entry Casa 10101
+PASS	housing entry Casa 10102
+PASS	housing entry Casa 10103
+PASS	housing entry Casa 10104
+PASS	housing entry Casa 10105
+PASS	housing entry Casa 10106
+PASS	housing entry Casa 10107
+PASS	housing entry Casa 10108
+PASS	gang interaction markers retained Morro da Nebulosa
+PASS	connected stairs and curved ramps Morro da Nebulosa
+COMMUNITY	Morro da Nebulosa	30	34	2467
+PASS	gang interaction markers retained Complexo da Lua Negra
+PASS	connected stairs and curved ramps Complexo da Lua Negra
+COMMUNITY	Complexo da Lua Negra	30	34	2387
+PASS	gang interaction markers retained Favela Horizonte Solar
+PASS	connected stairs and curved ramps Favela Horizonte Solar
+COMMUNITY	Favela Horizonte Solar	30	23	2002
+PASS	all 108 housing exits have unobstructed player body space
+PASS	current bank still fits unchanged roads
+PASS	friend construction site still fits
+PASS	construction site keeps original first-choice location
+PASS	restored district contains at least 60 unobstructed lots: 75
+PASS	no old dealership/coast/terrain reinstated
+LOT	servico	260	-1210.6	80	80
+LOT	servico	370	-1210.6	80	80
+LOT	praca	480	-1210.6	80	80
+LOT	torre	260	-1420.6	80	80
+LOT	servico	370	-1420.6	80	80
+LOT	estacionamento	480	-1420.6	80	80
+LOT	servico	690	-1420.6	80	80
+LOT	torre	800	-1420.6	80	80
+LOT	praca	910	-1420.6	80	80
+LOT	torre	260	-1299.4	80	80
+LOT	servico	370	-1299.4	80	80
+LOT	estacionamento	480	-1299.4	80	80
+LOT	servico	260	-1640.6	80	80
+LOT	torre	370	-1640.6	80	80
+LOT	praca	480	-1640.6	80	80
+LOT	torre	690	-1640.6	80	80
+LOT	servico	800	-1640.6	80	80
+LOT	estacionamento	910	-1640.6	80	80
+LOT	servico	260	-1519.4	80	80
+LOT	torre	370	-1519.4	80	80
+LOT	praca	480	-1519.4	80	80
+LOT	torre	690	-1519.4	80	80
+LOT	servico	800	-1519.4	80	80
+LOT	estacionamento	910	-1519.4	80	80
+LOT	torre	260	-1878.6	80	80
+LOT	servico	370	-1878.6	80	80
+LOT	praca	480	-1878.6	80	80
+LOT	servico	690	-1878.6	80	80
+LOT	torre	800	-1878.6	80	80
+LOT	estacionamento	910	-1878.6	80	80
+LOT	servico	260	-2080.6	80	80
+LOT	torre	370	-2080.6	80	80
+LOT	praca	480	-2080.6	80	80
+LOT	torre	690	-2080.6	80	80
+LOT	servico	800	-2080.6	80	80
+LOT	estacionamento	910	-2080.6	80	80
+LOT	torre	240.6	-1085	80	80
+LOT	servico	240.6	-975	80	80
+LOT	torre	119.4	-1085	80	80
+LOT	servico	119.4	-975	80	80
+LOT	servico	119.4	-865	80	80
+LOT	torre	730.6	-1085	80	80
+LOT	servico	119.4	-1215	80	80
+LOT	torre	119.4	-1309	80	80
+LOT	torre	119.4	-1403	80	80
+LOT	servico	119.4	-1497	80	80
+LOT	torre	119.4	-1591	80	80
+LOT	torre	119.4	-1685	80	80
+LOT	servico	119.4	-1779	80	80
+LOT	torre	119.4	-1873	80	80
+LOT	torre	119.4	-1967	80	80
+LOT	servico	670.6	-1215	80	80
+LOT	torre	979.4	-1215	80	80
+LOT	torre	1100.6	-1779	80	80
+LOT	servico	1100.6	-1873	80	80
+LOT	torre	1100.6	-1967	80	80
+LOT	torre	245	-2300.6	80	80
+LOT	servico	339	-2300.6	80	80
+LOT	torre	433	-2300.6	80	80
+LOT	torre	527	-2300.6	80	80
+LOT	servico	621	-2300.6	80	80
+LOT	torre	715	-2300.6	80	80
+LOT	torre	809	-2300.6	80	80
+LOT	servico	903	-2300.6	80	80
+LOT	torre	245	-2179.4	80	80
+LOT	torre	339	-2179.4	80	80
+LOT	servico	433	-2179.4	80	80
+LOT	torre	527	-2179.4	80	80
+LOT	torre	715	-2179.4	80	80
+LOT	servico	809	-2179.4	80	80
+LOT	torre	903	-2179.4	80	80
+LOT	torre	119.4	-2085	80	80
+LOT	servico	119.4	-2179	80	80
+LOT	torre	1100.6	-2085	80	80
+LOT	torre	1100.6	-2179	80	80
+PASS	restored district builds with original tower and housing builders
+PASS	metropolitan skyline retained
+PASS	commercial interiors restored
+PASS	no builder warnings
+TOTAL	128	DISTRICT	75	HOMES	90	18

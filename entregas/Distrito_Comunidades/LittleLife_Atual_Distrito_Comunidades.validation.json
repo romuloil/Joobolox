@@ -1,0 +1,40 @@
+{
+  "base_file": "atual.rbxl",
+  "base_sha256": "f528f4be7606ff60af94e6470db6503f152cc07eaf95ffa85ba69e6410bff8c0",
+  "output_sha256": "c12ebf66575c0bda6895b0c571aa15fa332b43b39d5adfb0569595ff6dc4feec",
+  "original_instances_preserved": 12350,
+  "original_non_source_property_chunks_preserved": 2008,
+  "original_scripts_unchanged": 152,
+  "modified_scripts": [
+    "ReplicatedStorage/Shared/CityRoads",
+    "ServerScriptService/Services/MapBuilder",
+    "ServerScriptService/Services/FavelaBuilder",
+    "ReplicatedStorage/Shared/HomeConfig",
+    "ServerScriptService/Services/HomeService"
+  ],
+  "new_modules": [
+    "FinancialDistrictBuilder"
+  ],
+  "compiled_scripts": 158,
+  "preserved_systems": [
+    "BankBuilder",
+    "BankService",
+    "BankController",
+    "GameConfig",
+    "LitoralBuilder",
+    "LitoralService",
+    "LitoralController",
+    "DealershipBuilder",
+    "DealershipController",
+    "VehicleService",
+    "GangService",
+    "PlayerDataService",
+    "ObraBuilder",
+    "FerramentasAssaltoService",
+    "CondoBuilder",
+    "ParkBuilder"
+  ],
+  "geometry_checks": 128,
+  "housing_checks": 20,
+  "studio_playtest": false
+}
