@@ -1,0 +1,30 @@
+PASS catalog has a real server-defined price
+PASS new player data loaded and saving is available
+PASS live new-player garage starts without unpurchased cars
+PASS dealership displays purchasable personal cars
+PASS job and admin cars cannot be bought at dealership
+PASS garage cannot sell cars through forged Buy request
+PASS remote purchase rejected outside dealership radius
+PASS prisoners cannot purchase vehicles
+PASS dead characters cannot buy
+PASS insufficient funds leave ownership and money unchanged
+PASS server charges actual price despite client price/owned fields
+PASS successful purchase unlocks withdrawal
+PASS only the purchased car appears in normal garage
+PASS catalog refreshes after purchase
+PASS duplicate rapid requests cannot charge or grant twice
+PASS money and ownership saved together through actual PlayerDataService
+PASS rejoin reloads purchased car from saved profile
+PASS invalid IDs, payloads and service cars cannot debit funds
+PASS job cars stay in workplace garage rather than personal dealership inventory
+PASS workplace withdrawal requires the job
+PASS Studio unlock allows testing an unpurchased personal car
+PASS Studio unlock does not grant permanent ownership
+PASS Studio personal garage offers unlocked cars
+PASS published server ignores Studio-only free setting
+PASS forged prompt event cannot open a remote garage
+PASS E prompt opens the dealership catalog nearby
+PASS failed profile load reports unavailable persistence
+PASS live purchase blocked when profile did not load safely
+PASS no runtime warnings
+TOTAL VEHICLES	29

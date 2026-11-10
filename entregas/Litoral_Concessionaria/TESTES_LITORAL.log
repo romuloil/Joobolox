@@ -1,0 +1,65 @@
+PASS ocean starts as ordinary tiled ground in fixture
+PASS three coastal coves build successfully
+PASS ground is cut out beneath ocean rather than covering swimming water
+PASS ground outside ocean cut remains intact
+PASS ocean uses 35 bounded water tiles with seabed, not a collidable blue plane
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water surface aligned at -8
+PASS water volume has no tile gaps or duplicated slabs
+PASS six inland coastal hills
+PASS future bridge is not constructed
+PASS coast builder is idempotent
+PASS 18 colorful umbrellas with 36 usable beach seats
+PASS 12 tourists, three vendor positions and six snack counters
+PASS old barrier removed from LK-102; future bridge endpoint is signed and closed
+PASS coastal highway and all three beach access roads registered for GPS
+PASS new winding road joins exact existing LK-102 endpoint
+PASS coastal road remains on land and stops before open water
+PASS every new coastal road has a GPS junction
+PASS existing NPCKit reused to create fifteen fixed coastal characters
+PASS service reinitialization cannot duplicate tourists
+PASS remote snack activation rejected
+PASS full inventory cannot be charged
+PASS insufficient funds cannot buy a snack
+PASS purchase gives actual consumable and charges configured price
+PASS duplicate owned snack cannot charge again
+PASS unequipped snack cannot heal
+PASS equipped snack consumes once and restores ten health
+PASS destroyed snack cannot be reused
+PASS tourist conversation validates distance
+PASS nearby tourist conversation works with cooldown
+PASS no runtime warnings
+TOTAL COAST	64	VOLUME	224000000

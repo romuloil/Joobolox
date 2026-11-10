@@ -1,13 +1,11 @@
-# Little Life — distrito e concessionária
+# Little Life — litoral e concessionária compacta
 
-[**Baixar o mapa completo para Roblox Studio (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/metropole-concessionaria/entregas/Metropole_Concessionaria/LittleLife_Metropole_Concessionaria.rbxl)
+[**Baixar o mapa completo atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/litoral-concessionaria/entregas/Litoral_Concessionaria/LittleLife_Litoral_Concessionaria.rbxl)
 
-Abra o arquivo no Studio e pressione **F5**. O banco continua preservado; o distrito passa a 88 lotes e recebe a Concessionária do Vale com a estrutura completa fornecida, interior e estacionamento externo.
+Abra no Roblox Studio e pressione **F5**. A concessionária mantém o prédio e o interior, com estacionamento menor e acesso mais próximo da avenida. O litoral continua a LK-102 com três praias, turistas, quiosques, carrinhos de picolé, guarda-sóis e retorno para a ponte futura. A ponte ainda não foi construída. Banco e distrito de 88 lotes preservados.
 
-No Studio, veículos liberados para testar. No jogo publicado, carros pessoais entram na garagem após compra na concessionária. Veículos de emprego mantêm as restrições de profissão. Veja o guia para testar a economia e a persistência.
+- [Guia de teste e novidades](entregas/Litoral_Concessionaria/LEIA_PRIMEIRO.md)
+- [Planta esquemática do litoral](entregas/Litoral_Concessionaria/PLANTA_LITORAL.png)
+- [Código e testes](correcoes/litoral-v4/README.md)
 
-- [Como encontrar, comprar e retirar](entregas/Metropole_Concessionaria/LEIA_PRIMEIRO.md)
-- [Código, extrator e testes](correcoes/metropole-v3/README.md)
-- [Relatório da importação e verificações](entregas/Metropole_Concessionaria/IMPORTACAO_E_TESTES.json)
-
-328 verificações automatizadas, 102 scripts compilados e leitura independente do arquivo binário. Renderização, física, multiplayer e APIs reais ainda precisam ser testados no Roblox Studio.
+395 verificações automatizadas e 104 scripts compilados. Renderização, natação, física, streaming e desempenho ainda precisam ser conferidos no Roblox Studio.

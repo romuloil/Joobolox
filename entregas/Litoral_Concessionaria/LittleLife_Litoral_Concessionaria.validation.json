@@ -1,0 +1,41 @@
+{
+  "base_sha256": "69229da83a262d6fbfc5e480b1ff8665c102aae3e77ecac721b4f94474a85dbe",
+  "output_sha256": "289670ba801cb72604c87b869dff159c701871c777ae11e00d1d215d06c60e77",
+  "original_instances_preserved": 12246,
+  "original_scripts_unchanged": 96,
+  "changed_scripts": [
+    "ServerScriptService/Services/BankBuilder",
+    "ServerScriptService/Services/MapBuilder",
+    "ReplicatedStorage/Shared/CityRoads",
+    "ServerScriptService/Services/DealershipBuilder",
+    "StarterPlayer/StarterPlayerScripts/Controllers/MapController",
+    "ServerScriptService/ServerBootstrap"
+  ],
+  "dealership_template_unchanged": true,
+  "new_modules": [
+    "CoastBuilder",
+    "CoastService"
+  ],
+  "compiled_scripts": 104,
+  "bank_service_controller_unchanged": true,
+  "studio_playtest": false,
+  "test_checks": {
+    "district": 128,
+    "bank": 156,
+    "vehicles": 29,
+    "dealership": 18,
+    "coast": 64
+  },
+  "independent_decode_instances": 12248,
+  "bridge_built": false,
+  "building_scale_changed": false,
+  "parking_depth_studs": {
+    "before": 1315.48,
+    "after": 590
+  },
+  "dealer_move_studs": [
+    0,
+    0,
+    400
+  ]
+}
