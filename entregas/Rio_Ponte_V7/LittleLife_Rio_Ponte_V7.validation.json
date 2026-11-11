@@ -1,0 +1,31 @@
+{
+  "base_file": "LittleLife_Comunidades_Mirantes_V6.rbxl",
+  "base_sha256": "1d749234f7a51f855f2d8e954442c7f4e4251c3e1d6a79cd86a1362b6b6c0b4f",
+  "output_sha256": "7d1b4030ab2a0c9355b86851419e0f6cd54d13d3b96ff61d66251f7ce0f3bc0f",
+  "original_instances_preserved": 12351,
+  "total_instances": 12353,
+  "modified_scripts": [
+    "ServerScriptService/Services/MapBuilder",
+    "ReplicatedStorage/Shared/CityRoads",
+    "ServerScriptService/Services/ExpansionBuilder",
+    "StarterPlayer/StarterPlayerScripts/Controllers/MapController"
+  ],
+  "added_modules": {
+    "RiverLayout": "ReplicatedStorage/Shared",
+    "RiverBuilder": "ServerScriptService/Services"
+  },
+  "original_scripts_unchanged": 154,
+  "compiled_scripts": 160,
+  "river_checks": 110,
+  "regression_checks": 151,
+  "river_and_bridge_parts_in_simulation": 1272,
+  "river_length_studs": 2831.47449223057,
+  "river_length_meters": 792.81,
+  "water_width_at_bridge_studs": 36,
+  "water_width_at_bridge_meters": 10.08,
+  "district_lots": 158,
+  "free_gang_homes": 90,
+  "purchasable_gang_homes": 18,
+  "studio_playtest": false,
+  "bridge": "Native Roblox adaptation inspired by the supplied Bridge Road Lowpoly GLB, not a published MeshPart import."
+}

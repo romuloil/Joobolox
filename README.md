@@ -1,16 +1,16 @@
-# Little Life — comunidades e mirantes V6
+# Little Life — Rio da Enseada e Ponte da Foz V7
 
-[**Baixar o mapa atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/comunidades-mirantes-v6/entregas/Comunidades_Mirantes_V6/LittleLife_Comunidades_Mirantes_V6.rbxl)
+[**Baixar o mapa atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/rio-ponte-v7/entregas/Rio_Ponte_V7/LittleLife_Rio_Ponte_V7.rbxl)
 
-Três comunidades mais densas e distintas, com vielas estreitas, relevo íngreme e mirantes voltados para a cidade. O distrito ganhou 83 lotes e acesso ao Rodoanel. Preserva as casas gratuitas e compráveis, o banco, o litoral e a concessionária da base aprovada.
+Rio sinuoso com aproximadamente **793 metros** de curso, largura nominal de **10 metros na travessia** e desembocadura no mar. Ponte estaiada vermelha inspirada no modelo enviado, com duas faixas, passeios, iluminação, rampas suaves e recanto junto à foz. A pista continua a partir do retorno leste da Avenida Beira-Mar.
 
-Abra no Roblox Studio e pressione **F5** para gerar o mapa e testar.
+Mantém as comunidades V6, o distrito, banco, concessionária e os sistemas existentes. Abra no Roblox Studio e pressione **F5** para gerar o mapa.
 
-- [Guia e roteiro de teste](entregas/Comunidades_Mirantes_V6/LEIA_PRIMEIRO.md)
-- [Código e testes](correcoes/comunidades-v6/README.md)
-- [Relatório de validação](entregas/Comunidades_Mirantes_V6/LittleLife_Comunidades_Mirantes_V6.validation.json)
-- [Planta técnica das comunidades](entregas/Comunidades_Mirantes_V6/PLANTA_COMUNIDADES.png)
+- [Guia e roteiro de teste](entregas/Rio_Ponte_V7/LEIA_PRIMEIRO.md)
+- [Código, testes e crédito do modelo de referência](correcoes/rio-ponte-v7/README.md)
+- [Relatório de validação](entregas/Rio_Ponte_V7/LittleLife_Rio_Ponte_V7.validation.json)
+- [Planta técnica do rio e da travessia](entregas/Rio_Ponte_V7/PLANTA_RIO_PONTE.png)
 
-171 verificações automatizadas, incluindo 6.861 amostras de circulação, 158 scripts compilados e leitura independente do arquivo binário. Aparência, desempenho, física e DataStore real ainda precisam de teste no Roblox Studio.
+261 verificações automatizadas, 160 scripts compilados e decodificação independente do arquivo. Física, natação, visual e desempenho ainda precisam de Playtest no Roblox Studio.
 
-[Entrega anterior V5](entregas/Distrito_Comunidades/LEIA_PRIMEIRO.md)
+[Entrega anterior V6](entregas/Comunidades_Mirantes_V6/LEIA_PRIMEIRO.md)
