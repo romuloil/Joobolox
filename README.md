@@ -1,16 +1,15 @@
-# Little Life — Rio da Enseada e Ponte da Foz V7
+# Little Life — rio ampliado e ponte tripla V8
 
-[**Baixar o mapa atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/rio-ponte-v7/entregas/Rio_Ponte_V7/LittleLife_Rio_Ponte_V7.rbxl)
+[**Baixar o mapa atualizado (.rbxl)**](https://github.com/romuloil/Joobolox/raw/refs/heads/rio-ponte-tripla-v8/entregas/Rio_Ponte_Tripla_V8/LittleLife_Rio_Ampliado_Ponte_Tripla_V8.rbxl)
 
-Rio sinuoso com aproximadamente **793 metros** de curso, largura nominal de **10 metros na travessia** e desembocadura no mar. Ponte estaiada vermelha inspirada no modelo enviado, com duas faixas, passeios, iluminação, rampas suaves e recanto junto à foz. A pista continua a partir do retorno leste da Avenida Beira-Mar.
+Rio com **o dobro da largura**, aproximadamente **20 metros na travessia**, preservando o curso aprovado. Ponte ampliada com **três módulos estaiados** no mesmo estilo vermelho, tabuleiro contínuo de aproximadamente 101 metros, passeios e rampas ajustados.
 
-Mantém as comunidades V6, o distrito, banco, concessionária e os sistemas existentes. Abra no Roblox Studio e pressione **F5** para gerar o mapa.
+Abra no Roblox Studio e pressione **F5** para gerar o mapa e testar.
 
-- [Guia e roteiro de teste](entregas/Rio_Ponte_V7/LEIA_PRIMEIRO.md)
-- [Código, testes e crédito do modelo de referência](correcoes/rio-ponte-v7/README.md)
-- [Relatório de validação](entregas/Rio_Ponte_V7/LittleLife_Rio_Ponte_V7.validation.json)
-- [Planta técnica do rio e da travessia](entregas/Rio_Ponte_V7/PLANTA_RIO_PONTE.png)
+- [Guia de teste](entregas/Rio_Ponte_Tripla_V8/LEIA_PRIMEIRO.md)
+- [Código e testes](correcoes/rio-ponte-tripla-v8/README.md)
+- [Validação](entregas/Rio_Ponte_Tripla_V8/LittleLife_Rio_Ampliado_Ponte_Tripla_V8.validation.json)
 
-261 verificações automatizadas, 160 scripts compilados e decodificação independente do arquivo. Física, natação, visual e desempenho ainda precisam de Playtest no Roblox Studio.
+264 verificações automatizadas, 160 scripts compilados e decodificação independente. Visual, física, natação e desempenho ainda precisam de Playtest no Roblox Studio.
 
-[Entrega anterior V6](entregas/Comunidades_Mirantes_V6/LEIA_PRIMEIRO.md)
+[Entrega anterior V7](entregas/Rio_Ponte_V7/LEIA_PRIMEIRO.md)
