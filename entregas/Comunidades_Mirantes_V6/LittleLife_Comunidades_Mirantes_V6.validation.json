@@ -1,0 +1,39 @@
+{
+  "base_file": "LittleLife_Atual_Distrito_Comunidades.rbxl",
+  "base_sha256": "c12ebf66575c0bda6895b0c571aa15fa332b43b39d5adfb0569595ff6dc4feec",
+  "output_sha256": "1d749234f7a51f855f2d8e954442c7f4e4251c3e1d6a79cd86a1362b6b6c0b4f",
+  "original_instances_preserved": 12351,
+  "original_non_source_property_chunks_preserved": 2009,
+  "original_scripts_unchanged": 154,
+  "modified_scripts": [
+    "ReplicatedStorage/Shared/CityRoads",
+    "ServerScriptService/Services/FavelaBuilder",
+    "ServerScriptService/Services/FinancialDistrictBuilder",
+    "StarterPlayer/StarterPlayerScripts/Controllers/MapController"
+  ],
+  "compiled_scripts": 158,
+  "preserved_systems": [
+    "BankBuilder",
+    "BankService",
+    "BankController",
+    "GameConfig",
+    "LitoralBuilder",
+    "LitoralService",
+    "LitoralController",
+    "DealershipBuilder",
+    "DealershipController",
+    "VehicleService",
+    "GangService",
+    "PlayerDataService",
+    "ObraBuilder",
+    "MapBuilder",
+    "HomeService",
+    "HomeConfig"
+  ],
+  "geometry_checks": 151,
+  "housing_checks": 20,
+  "district_lots": 158,
+  "free_gang_homes": 90,
+  "purchasable_gang_homes": 18,
+  "studio_playtest": false
+}

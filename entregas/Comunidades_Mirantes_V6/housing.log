@@ -1,0 +1,25 @@
+[HomeService] Baú medieval: sem modelo (versão de peças).
+[HomeService] Armário (cofre antigo): sem modelo (versão de peças).
+[HomeService] Guarda-roupa nórdico: sem modelo (versão de peças).
+[HomeService] Casas: 2 casinhas, 0 médias, 0 sobrados, 0 apartamentos, 0 casas modernas, 0 coberturas, 0 mansões, 3 barracos.
+PASS	non-member cannot buy gang residence
+PASS	different gang cannot buy residence
+PASS	free home follows gang switch
+PASS	remote purchase rejected by server distance
+PASS	insufficient funds causes no ownership or charge
+PASS	member buys home for 35000
+PASS	purchase assigns actual housing facade
+PASS	optional purchase retains free gang home
+PASS	duplicate request does not charge twice
+PASS	moving within purchased tier is free
+PASS	purchased house opens furnished interior
+PASS	existing interior and furniture builders execute
+PASS	player exits to community door
+PASS	gang change suspends residence use
+PASS	gang change preserves purchase and furniture
+PASS	returning to gang restores residence without charge
+PASS	rejoin restores purchased residence through existing migration
+PASS	occupied facade cannot be bought by second player
+PASS	purchases use existing PlayerDataService homes persistence interface
+PASS	housing flow has no runtime warnings
+TOTAL HOUSING	20
